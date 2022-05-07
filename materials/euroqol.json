@@ -1,0 +1,412 @@
+{
+  "components": {
+    "1": {
+      "id": "1",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "type": "text",
+          "content": "In het volgende gedeelte zullen we u een klein aantal vragen stellen over uw gezondheid van vandaag. Klik op \"verder\" om verder te gaan.\n",
+          "title": "Welkom!"
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Verder →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "Welcome"
+    },
+    "2": {
+      "id": "2",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "required": true,
+          "type": "likert",
+          "items": [
+            {
+              "label": "MOBILITEIT",
+              "coding": "mobiliteit"
+            }
+          ],
+          "width": "5",
+          "anchors": [
+            "Ik heb geen problemen met rondwandelen",
+            "Ik heb een beetje problemen met rondwandelen",
+            "Ik heb matige problemen met rondwandelen",
+            "Ik heb ernstige problemen met rondwandelen",
+            "Ik ben niet in staat om rond te wandelen"
+          ],
+          "label": "Vink onder elke titel het ENE vakje aan dat het best uw gezondheid VANDAAG beschrijft.",
+          "name": "mob"
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "mobility"
+    },
+    "3": {
+      "id": "3",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "required": true,
+          "type": "likert",
+          "items": [
+            {
+              "label": "ZELFZORG",
+              "coding": "zelfzorg"
+            }
+          ],
+          "width": "5",
+          "anchors": [
+            "Ik heb geen problemen met mijzelf te wassen of aan te kleden",
+            "Ik heb een beetje problemen met mijzelf te wassen of aan te kleden",
+            "Ik heb matige problemen met mijzelf te wassen of aan te kleden",
+            "Ik heb ernstige problemen met mijzelf te wassen of aan te kleden",
+            "Ik ben niet in staat mijzelf te wassen of aan te kleden"
+          ],
+          "label": "Vink onder elke titel het ENE vakje aan dat het best uw gezondheid VANDAAG beschrijft.",
+          "name": "zelfzorg"
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "self-care"
+    },
+    "4": {
+      "id": "4",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "required": true,
+          "type": "likert",
+          "items": [
+            {
+              "label": "DAGELIJKSE ACTIVITEITEN",
+              "coding": "dagelijkse"
+            }
+          ],
+          "width": "5",
+          "anchors": [
+            "Ik heb geen problemen met mijn dagelijkse activiteiten",
+            "Ik heb een beetje problemen met mijn dagelijkse activiteiten",
+            "Ik heb matige problemen met mijn dagelijkse activiteiten",
+            "Ik heb ernstige problemen met mijn dagelijkse activiteiten",
+            "Ik ben niet in staat mijn dagelijkse activiteiten uit te voeren"
+          ],
+          "label": "Vink onder elke titel het ENE vakje aan dat het best uw gezondheid VANDAAG beschrijft.",
+          "help": "(bijv. werk, studie, huishouden, gezins- en vrijetijdsactiviteiten)",
+          "name": "dagelijkse"
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "daily-activities"
+    },
+    "5": {
+      "id": "5",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "required": true,
+          "type": "likert",
+          "items": [
+            {
+              "label": "PIJN / ONGEMAK",
+              "coding": "pijn"
+            }
+          ],
+          "width": "5",
+          "anchors": [
+            "Ik heb geen pijn of ongemak",
+            "Ik heb een beetje pijn of ongemak",
+            "Ik heb matige pijn of ongemak",
+            "Ik heb ernstige pijn of ongemak",
+            "Ik heb extreme pijn of ongemak"
+          ],
+          "name": "pijn",
+          "label": "Vink onder elke titel het ENE vakje aan dat het best uw gezondheid VANDAAG beschrijft."
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "pain"
+    },
+    "6": {
+      "id": "6",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "required": true,
+          "type": "likert",
+          "items": [
+            {
+              "label": "ANGST / DEPRESSIE",
+              "coding": "angst"
+            }
+          ],
+          "width": "5",
+          "anchors": [
+            "Ik ben niet angstig of depressief",
+            "Ik ben een beetje angstig of depressief",
+            "Ik ben matig angstig of depressief",
+            "Ik ben erg angstig of depressief",
+            "Ik ben extreem angstig of depressief"
+          ],
+          "label": "Vink onder elke titel het ENE vakje aan dat het best uw gezondheid VANDAAG beschrijft.",
+          "name": "angst"
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "depression"
+    },
+    "7": {
+      "id": "7",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "type": "text",
+          "title": "Dank u voor uw deelname!",
+          "content": "U kunt nu het pagina sluiten."
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Continue →",
+      "submitButtonPosition": "hidden",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "finish"
+    },
+    "root": {
+      "id": "root",
+      "title": "root",
+      "type": "lab.flow.Sequence",
+      "children": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "parameters": [],
+      "plugins": [
+        {
+          "type": "lab.plugins.Metadata"
+        }
+      ],
+      "metadata": {
+        "title": "",
+        "description": "",
+        "repository": "",
+        "contributors": ""
+      }
+    }
+  },
+  "version": [
+    20,
+    2,
+    4
+  ],
+  "files": {
+    "files": {
+      "index.html": {
+        "content": "data:text/html,%3C!doctype%20html%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%20%20%3Cmeta%20charset%3D%22utf-8%22%3E%0A%20%20%3Ctitle%3EExperiment%3C%2Ftitle%3E%0A%20%20%3C!--%20viewport%20setup%20--%3E%0A%20%20%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice-width%2C%20initial-scale%3D1%22%3E%0A%20%20%3C!--%20lab.js%20library%20and%20experiment%20code%20--%3E%0A%20%20%24%7B%20header%20%7D%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%20%20%3C!--%20If%20you'd%20rather%20have%20a%20container%20with%20a%20fixed%20width%0A%20%20%20%20%20%20%20and%20variable%20height%2C%20try%20removing%20the%20fullscreen%20class%20below%20--%3E%0A%20%20%3Cdiv%20class%3D%22container%20fullscreen%22%20data-labjs-section%3D%22main%22%3E%0A%20%20%20%20%3Cmain%20class%3D%22content-vertical-center%20content-horizontal-center%22%3E%0A%20%20%20%20%20%20%3Cdiv%3E%0A%20%20%20%20%20%20%20%20%3Ch2%3ELoading%20Experiment%3C%2Fh2%3E%0A%20%20%20%20%20%20%20%20%3Cp%3EThe%20experiment%20is%20loading%20and%20should%20start%20in%20a%20few%20seconds%3C%2Fp%3E%0A%20%20%20%20%20%20%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fmain%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A",
+        "source": "library"
+      },
+      "style.css": {
+        "content": "data:text/css,%2F*%20Please%20define%20your%20custom%20styles%20here%20*%2F",
+        "source": "library"
+      }
+    },
+    "bundledFiles": {
+      "lib/lab.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.js.map": {
+        "type": "text/plain"
+      },
+      "lib/lab.fallback.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.legacy.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.legacy.js.map": {
+        "type": "text/plain"
+      },
+      "lib/lab.css": {
+        "type": "text/css"
+      },
+      "lib/loading.svg": {
+        "type": "image/svg+xml"
+      }
+    }
+  }
+}

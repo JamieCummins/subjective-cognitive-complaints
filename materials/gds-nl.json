@@ -1,0 +1,173 @@
+{
+  "components": {
+    "2": {
+      "id": "2",
+      "type": "lab.html.Form",
+      "content": "<body>\n  <!-- If you'd rather have a container with a fixed width\n       and variable height, try removing the fullscreen class below -->\n  <div class=\"container fullscreen\" data-labjs-section=\"main\"><main class=\"\n        content-horizontal-center\n        content-vertical-center\n      \">\n      <div class=\"w-m text-left\">\n        <form id=\"page-form\" style=\"display: block;\" autocomplete=\"off\">\n          <div class=\"page-item page-item-likert\" id=\"page-item-gds\">\n            <p class=\"font-weight-bold\" style=\"margin: 1rem 0 0.25rem\">\n              Ja of nee?\n            </p>\n            <p class=\"small text-muted hide-if-empty\" style=\"margin: 0.25rem 0\">\n              \n            </p>\n            <table class=\"page-item-table\">\n              <colgroup>\n                <col style=\"width: 40%\">\n                <col style=\"width: 12%\">\n<col style=\"width: 12%\">\n              </colgroup>\n              <thead class=\"sticky-top\">\n        <tr><th class=\"sticky-top\"></th>\n        <th class=\"sticky-top text-center small\">\n  Ja\n</th>\n<th class=\"sticky-top text-center small\">\n  Nee\n</th>\n      </tr></thead>\n              <tbody>\n                <tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Bent u innerlijk tevreden met uw leven?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-1_r\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-1_r\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Bent u met veel activiteiten en interesses opgehouden?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-2\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-2\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Hebt u het gevoel dat uw leven leeg is?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-3\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-3\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Verveelt u zich vaak?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-4\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-4\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Hebt u meestal een goed humeur?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-5_r\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-5_r\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Bent u bang dat u iets naars zal overkomen?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-6\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-6\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Voelt u zich meestal wel gelukkig?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-7_r\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-7_r\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Voelt u zich vaak hopeloos?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-8\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-8\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Blijft u liever thuis dan uit te gaan en nieuwe dingen te doen?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-9\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-9\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Hebt u het gevoel dat u meer moeite heeft met het geheugen dan anderen?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-10\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-10\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Vindt u het fijn om te leven?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-11_r\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-11_r\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Voelt u zich nogal waardeloos op het ogenblik?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-12\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-12\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Voelt u zich energiek?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-13_r\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-13_r\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Hebt u het gevoel dat uw situatie hopeloos is?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-14\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-14\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n<tr>\n      <td class=\"small\" style=\"padding-left: 0\">\n        Denkt u dat de meeste mensen het beter hebben dan u?\n      </td>\n      <td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-15\" value=\"1\" required>\n  </label>\n</td>\n<td class=\"text-center\">\n  <label style=\"height: 100%; padding: 10px 0\">\n    <input type=\"radio\" name=\"gds-15\" value=\"0\" required>\n  </label>\n</td>\n    </tr>\n              </tbody>\n            </table>\n          </div>\n        </form>\n      </div>\n    </main>\n    <footer class=\"\n    content-horizontal-right\n    content-vertical-center\n  \">\n  <button type=\"submit\" form=\"page-form\">\n    Continue →\n  </button>\n</footer></div>\n\n\n<div id=\"labjs-debug\"><style type=\"text/css\">\n  .labjs-debug-opener {\n    font-size: 1.2rem;\n    color: var(--color-gray-content, #8d8d8d);\n    /* Box formatting */\n    width: 40px;\n    height: 32px;\n    padding: 6px 8px;\n    border-radius: 3px;\n    border: 1px solid var(--color-border, #e5e5e5);\n    z-index: 3;\n    background-color: var(--color-background, white);\n    /* Fixed position */\n    position: fixed;\n    bottom: 36px;\n    right: -5px;\n    /* Content centering */\n    display: flex;\n    align-items: center;\n    justify-content: left;\n  }\n\n  .labjs-debug-toggle {\n    cursor: pointer;\n  }\n\n  body.labjs-debugtools-visible .labjs-debug-opener {\n    display: none;\n  }\n\n  .labjs-debug-overlay {\n    font-family: var(--font-family, \"Arial\", sans-serif);\n    color: black;\n    /* Box formatting */\n    width: 100vw;\n    height: 30vh;\n    position: fixed;\n    bottom: 0;\n    left: 0;\n    z-index: 2;\n    background-color: white;\n    border-top: 2px solid var(--color-border, #e5e5e5);\n    display: none;\n    overflow: scroll;\n  }\n\n  #labjs-debug.labjs-debug-large .labjs-debug-overlay {\n    height: 100vh;\n  }\n\n  .labjs-debug-overlay-menu {\n    font-size: 0.8rem;\n    color: var(--color-gray-content, #8d8d8d);\n    padding: 8px 12px 6px;\n    border-bottom: 1px solid var(--color-border, #e5e5e5);\n  }\n\n  .labjs-debug-overlay-menu a {\n    color: var(--color-gray-content, #8d8d8d);\n  }\n\n  .labjs-debug-overlay-menu .pull-right {\n    font-size: 1rem;\n    float: right;\n  }\n\n  body.labjs-debugtools-visible .labjs-debug-overlay {\n    display: block;\n  }\n\n  .labjs-debug-overlay-contents {\n    padding: 12px;\n  }\n\n  .labjs-debug-overlay-contents table {\n    font-size: 0.8rem;\n  }\n\n  .labjs-debug-overlay-contents table tr.labjs-debug-state {\n    background-color: var(--color-gray-background, #f8f8f8);\n  }\n\n  /* Truncated cells */\n  .labjs-debug-trunc {\n    min-width: 200px;\n    max-width: 400px;\n  }\n  .labjs-debug-trunc::after {\n    content: \"...\";\n    opacity: 0.5;\n  }\n</style>\n<div class=\"labjs-debug-opener labjs-debug-toggle\"><div>≡</div></div>\n<div class=\"labjs-debug-overlay\">\n  <div class=\"labjs-debug-overlay-menu\">\n    <div class=\"pull-right\">\n      <span class=\"labjs-debug-toggle\">×</span>\n    </div>\n    <code>lab.js</code> ·\n    data preview ·\n    <a href=\"#\" class=\"labjs-debug-data-download\">download csv</a>\n  </div>\n  <div class=\"labjs-debug-overlay-contents\">\n    Contents\n  </div>\n</div></div><div id=\"eid-chrome-extension-is-installed\"></div></body>",
+      "scrollTop": true,
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "GDS",
+      "_tab": "Behavior"
+    },
+    "5": {
+      "id": "5",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "type": "text",
+          "title": "Bedankt!",
+          "content": "Uw antwoorden zijn opgeslagen. "
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Doorgaan →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "done"
+    },
+    "6": {
+      "id": "6",
+      "type": "lab.html.Page",
+      "items": [
+        {
+          "type": "text",
+          "title": "Welkom!",
+          "content": "De lijst op de volgende pagina bevat vragen waarop u met 'JA' of 'NEE' kunt antwoorden. Het is de bedoeling dat u de vragen leest en bedenkt welk antwoord u hierop zult geven. U geeft het antwoord dat het beste weergeeft hoe u zich<u>de afgelopen week, met vandaag erbij,</u> heeft gevoeld. Klik op \"doorgaan\" om te beginnen."
+        }
+      ],
+      "scrollTop": true,
+      "submitButtonText": "Doorgaan →",
+      "submitButtonPosition": "right",
+      "files": [],
+      "responses": [
+        {
+          "label": "",
+          "event": "",
+          "target": "",
+          "filter": ""
+        }
+      ],
+      "parameters": [
+        {
+          "name": "",
+          "value": "",
+          "type": "string"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "title": "",
+          "message": "",
+          "code": ""
+        }
+      ],
+      "title": "GDS introduction"
+    },
+    "root": {
+      "id": "root",
+      "title": "root",
+      "type": "lab.flow.Sequence",
+      "children": [
+        "6",
+        "2",
+        "5"
+      ],
+      "parameters": [],
+      "plugins": [
+        {
+          "type": "lab.plugins.Metadata"
+        }
+      ],
+      "metadata": {
+        "title": "",
+        "description": "",
+        "repository": "",
+        "contributors": ""
+      }
+    }
+  },
+  "version": [
+    20,
+    2,
+    4
+  ],
+  "files": {
+    "files": {
+      "index.html": {
+        "content": "data:text/html,%3C!doctype%20html%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%20%20%3Cmeta%20charset%3D%22utf-8%22%3E%0A%20%20%3Ctitle%3EExperiment%3C%2Ftitle%3E%0A%20%20%3C!--%20viewport%20setup%20--%3E%0A%20%20%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice-width%2C%20initial-scale%3D1%22%3E%0A%20%20%3C!--%20lab.js%20library%20and%20experiment%20code%20--%3E%0A%20%20%24%7B%20header%20%7D%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%20%20%3C!--%20If%20you'd%20rather%20have%20a%20container%20with%20a%20fixed%20width%0A%20%20%20%20%20%20%20and%20variable%20height%2C%20try%20removing%20the%20fullscreen%20class%20below%20--%3E%0A%20%20%3Cdiv%20class%3D%22container%20fullscreen%22%20data-labjs-section%3D%22main%22%3E%0A%20%20%20%20%3Cmain%20class%3D%22content-vertical-center%20content-horizontal-center%22%3E%0A%20%20%20%20%20%20%3Cdiv%3E%0A%20%20%20%20%20%20%20%20%3Ch2%3ELoading%20Experiment%3C%2Fh2%3E%0A%20%20%20%20%20%20%20%20%3Cp%3EThe%20experiment%20is%20loading%20and%20should%20start%20in%20a%20few%20seconds%3C%2Fp%3E%0A%20%20%20%20%20%20%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fmain%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A",
+        "source": "library"
+      },
+      "style.css": {
+        "content": "data:text/css,%2F*%20Please%20define%20your%20custom%20styles%20here%20*%2F",
+        "source": "library"
+      }
+    },
+    "bundledFiles": {
+      "lib/lab.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.js.map": {
+        "type": "text/plain"
+      },
+      "lib/lab.fallback.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.legacy.js": {
+        "type": "application/javascript"
+      },
+      "lib/lab.legacy.js.map": {
+        "type": "text/plain"
+      },
+      "lib/lab.css": {
+        "type": "text/css"
+      },
+      "lib/loading.svg": {
+        "type": "image/svg+xml"
+      }
+    }
+  }
+}

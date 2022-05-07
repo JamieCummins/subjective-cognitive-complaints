@@ -1,0 +1,228 @@
+---
+title: "processing"
+author: "Jamie Cummins"
+date: "3/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(Hmisc)
+library(RSQLite)
+library(jsonlite)
+library(tidyverse)
+library(janitor)
+library(pacman)
+library(knitr)
+library(kableExtra)
+library(lubridate) 
+library(tidylog)
+
+```
+
+
+# Converting SQL data
+
+Establish SQL connection and extract main table:
+
+```{r}
+
+# Establish SQL connection
+con <-
+  dbConnect(drv = RSQLite::SQLite(),
+            # GUYS: CHANGE THE BELOW DIRECTORY TO THE LOCATION AND NAME OF THE FILE
+            dbname = paste0('raw/questionnaire_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
+
+
+# Extract main table
+d <-
+  dbGetQuery(conn = con,
+             statement = 'SELECT * FROM labjs')
+
+# Close and discard connection
+dbDisconnect(conn = con)
+rm(con)
+
+```
+
+* id: row number
+* session: generated identifier for each individual session (one per participant)
+* timestamp
+* url
+* metadata: also includes a variable "id" which corresponds to individual sessions
+* data: the actual data
+
+Process metadata and combine with the rest:
+
+```{r}
+
+d.meta <-
+  map_dfr(d$metadata, fromJSON) %>% # apply JSON function to the metadata
+  dplyr::rename(unique_id = id) # rename to avoid confusion
+
+d <- d %>%
+  bind_cols(d.meta) %>%
+  select(-metadata)
+
+```
+
+* slice: the number of the entry for that specific subject
+* observation: what we will use as subject identifier
+* payload: tells you whether the data are complete (full) or not (incremental)
+
+See by how much subject identifiers can be shortened:
+
+```{r}
+
+count_unique <- function(x) {
+  return(length(unique(x)))
+}
+# returns how many unique observations there are in a given vector
+
+information_preserved <- function(x, length) {
+  return(count_unique(str_sub(x, end = i)) == count_unique(x))
+}
+# put in a vector and a string length
+# for that string length, the vector checks how many unique observations there are when the strings are truncated using that length
+# the function then compares this number to the number of unique observations when at full string length
+# if this number is the same (i.e., truncating the string doesn't change the number of unique observations) it returns TRUE
+
+for (i in 5:36) {
+  if (
+    information_preserved(d$session, i) &&
+    information_preserved(d$observation, i)
+  ) {
+    break()
+  }
+}
+# check if more than five characters are needed to preserve the identifying information
+# for-loop breaks as soon as both expressions are evaluated as TRUE
+
+```
+
+Truncate ID strings to five characters:
+
+```{r}
+
+# Truncate IDs
+d <- d %>%
+  dplyr::mutate(session = str_sub(session, end = i),
+                unique_id = str_sub(unique_id, end = i))
+
+```
+
+Extract the actual data:
+
+```{r}
+
+# Create function that does this
+parseJSON <- function(input) {
+  return(input %>%
+           fromJSON(flatten = TRUE) %>% {
+             if (class(.) == 'list') {discard(., is.null) %>% as_tibble()}
+             else {.}
+             } %>%
+           janitor::clean_names() %>%
+           mutate_all(as.character))
+}
+
+# Get full data
+d.full <- d %>%
+  dplyr::filter(payload == 'full') %>%
+  group_by(unique_id, id) %>%
+  do({map_dfr(.$data, parseJSON)} %>%
+       bind_rows()) %>%
+  ungroup()
+
+```
+
+Get incremental data (in case the full data are not available).
+
+```{r}
+
+d.incremental <-
+  d %>%
+  dplyr::filter(payload %in% c('incremental', 'latest')) %>%
+  group_by(unique_id, id) %>%
+  do(
+    {map_dfr(.$data, parseJSON)} %>%
+      bind_rows()
+  ) %>%
+  ungroup()
+
+# # merge data sets
+# d.output <-
+#   d.full %>%
+#   bind_rows(d.incremental %>% filter(!(unique_id %in% d.full$unique_id)))
+
+# %>%
+#   type_convert()
+
+full_raw_data_df <- d.incremental
+
+```
+
+# write out and save csvs
+
+```{r}
+
+# CHANGE LOCATION AND NAME IN THE STRING TO BE WHERE YOU WANT TO SAVE THE FILE
+write_csv(full_raw_data_df, paste0("raw/questionnaire_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+
+```
+
+
+```{r}
+
+# read in assessments 
+
+# CHANGE LOCATION AND NAME TO WHERE THE .CSV FILE IS SAVED
+questionnaire_raw_df <- read_csv("raw/questionnaire_06052022.csv") 
+
+```
+
+Notes to self:
+
+1. Go through SMART data -> identify participants who completed only partial training but also gave follow-up measures, then run sensitivity analyses
+2. Extract descriptive data about the number of sessions that each participant completed
+3. flag and !!probably!! include participants who only completed T1 assessments -> sensitivity analysis
+4. Check for bugs in the exclusion of participants at T2
+5. Check out the potential for random responding in RAI/other measures
+
+
+# process demographics
+
+```{r}
+
+questionnaire_df <- questionnaire_raw_df %>%
+  filter(!is.na(wat_is_uw_e_mailadres)) %>%
+  select(email = wat_is_uw_e_mailadres,
+         age = wat_is_uw_leeftijd,
+         complaints = welke_cognitieve_klachten_heeft_u,
+         preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
+         brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
+
+```
+
+
+```{r}
+
+write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+
+```
+
+```{r}
+
+library(RCurl)
+
+myCsv <- getURL("ftp://ftp.drjamiecumminscom.webhosting.be/md/vragenlijst/data/data.sqlite", ssl.verifypeer = FALSE)
+myData <- read.csv(textConnection(myCsv))
+myData
+
+"ftp://ftp.drjamiecumminscom.webhosting.be/md/vragenlijst/data/data.sqlite"
+
+```
+
+
