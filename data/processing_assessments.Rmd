@@ -1,0 +1,310 @@
+---
+title: "processing_assessments"
+author: "Jamie Cummins"
+date: "`r Sys.Date()`"
+output: html_document
+---
+---
+title: "processing"
+author: "Jamie Cummins"
+date: "3/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(Hmisc)
+library(RSQLite)
+library(jsonlite)
+library(tidyverse)
+library(janitor)
+library(pacman)
+library(knitr)
+library(kableExtra)
+library(lubridate) 
+library(tidylog)
+
+```
+
+
+```{r}
+
+# spm t1 
+spm_t1_raw_df <- read_csv("raw/spm_11052022.csv")
+
+# rai t1 
+rai_t1_raw_df <- read_csv("raw/rai_11052022.csv")
+
+# questionnaires t1 
+questionnaires_t1_raw_df <- read_csv("raw/questionnaires_11052022.csv")
+
+
+```
+
+# Demographics
+
+```{r}
+
+demographics_df <- rai_t1_raw_df %>%
+  filter(!is.na(wat_is_uw_geslacht),
+         age > 50) %>%
+  select(email = prolificid, gender = wat_is_uw_geslacht, age)
+
+```
+
+# Raven's
+
+```{r}
+
+spm_df <- spm_t1_raw_df %>%
+  select(email, correct_answer, response) %>%
+  fill(email) %>%
+  filter(!is.na(correct_answer)) %>%
+  mutate(correct = case_when(correct_answer == response ~ 1,
+                             TRUE ~ 0)) %>%
+  select(-correct_answer, -response) %>%
+  group_by(email) %>%
+  filter(n() == 60) %>%
+  summarise(ravens_raw_score = sum(correct)) 
+
+```
+
+# RAI
+
+```{r}
+
+rai_t1_raw_df %>%
+  # select(prolificid, trial_num, correct) %>%
+  fill(prolificid) %>%
+  filter(prolificid == "globetrotster@hotmail.com")
+
+rai_df <- rai_t1_raw_df %>%
+  select(prolificid, trial_num, correct) %>%
+  rename(email = prolificid) %>%
+  fill(email) %>%
+  group_by(email, trial_num) %>%
+  filter(n() == 4) %>%
+  fill(correct) %>%
+  ungroup() %>%
+  mutate(correct = case_when(is.na(correct) ~ FALSE,
+                             TRUE ~ correct)) %>%
+  distinct(email, trial_num, .keep_all = TRUE) %>%
+  select(email, correct) %>%
+  group_by(email) %>%
+  filter(n() == 128) %>%
+  summarise(rai_score = sum(correct))
+
+```
+
+# Questionnaires
+
+```{r}
+
+# BRIEF
+brief_df <- questionnaires_t1_raw_df %>%
+  select(email = wat_is_uw_email, contains("brief")) %>%
+  fill(email) %>%
+  filter(!is.na(brief_brief_sr_1))
+
+# EURO QOL
+qol_df <- questionnaires_t1_raw_df %>%
+  select(email = wat_is_uw_email, mobility = mob_mobiliteit,
+         self_care = zelfzorg_zelfzorg, daily_function = dagelijkse_dagelijkse,
+         pain = pijn_pijn, fear = angst_angst) %>% 
+  fill(email) %>%
+  pivot_longer(cols = mobility:fear,
+               names_to = "item",
+               values_to = "rating") %>%
+  filter(!is.na(rating)) %>%
+  group_by(email) %>%
+  mutate(qol_score = sum(rating)) %>%
+  distinct(email, qol_score)
+
+# GDS
+gds_df <- questionnaires_t1_raw_df %>%
+  select(email = wat_is_uw_email, contains("gds")) %>% 
+  fill(email) %>%
+  filter(!is.na(gds_1_r)) %>%
+  
+  # reverse scoring
+  mutate_at(vars(contains("_r")), 
+            funs(case_when(. == 1 ~ 0,
+                 TRUE ~ 1))) %>%
+  group_by(email) %>%
+  mutate(gds_score = sum(across(contains("gds")))) %>%
+  ungroup() %>%
+  select(email, gds_score)
+
+```
+
+
+# Add RBANS here
+
+```{r}
+
+
+
+
+```
+
+
+
+```{r}
+
+group_level_df <- spm_df %>%
+  left_join(rai_df) %>%
+  left_join(gds_df) %>%
+  left_join(brief_df) %>%
+  left_join(qol_df) 
+
+```
+
+# Converting SQL data
+
+Establish SQL connection and extract main table:
+
+```{r}
+
+# Establish SQL connection
+con <-
+  dbConnect(drv = RSQLite::SQLite(),
+            dbname = paste0('raw/questionnaires_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
+
+
+# Extract main table
+d <-
+  dbGetQuery(conn = con,
+             statement = 'SELECT * FROM labjs')
+
+# Close and discard connection
+dbDisconnect(conn = con)
+rm(con)
+
+```
+
+* id: row number
+* session: generated identifier for each individual session (one per participant)
+* timestamp
+* url
+* metadata: also includes a variable "id" which corresponds to individual sessions
+* data: the actual data
+
+Process metadata and combine with the rest:
+
+```{r}
+
+d.meta <-
+  map_dfr(d$metadata, fromJSON) %>% # apply JSON function to the metadata
+  dplyr::rename(unique_id = id) # rename to avoid confusion
+
+d <- d %>%
+  bind_cols(d.meta) %>%
+  select(-metadata)
+
+```
+
+* slice: the number of the entry for that specific subject
+* observation: what we will use as subject identifier
+* payload: tells you whether the data are complete (full) or not (incremental)
+
+See by how much subject identifiers can be shortened:
+
+```{r}
+
+count_unique <- function(x) {
+  return(length(unique(x)))
+}
+# returns how many unique observations there are in a given vector
+
+information_preserved <- function(x, length) {
+  return(count_unique(str_sub(x, end = i)) == count_unique(x))
+}
+# put in a vector and a string length
+# for that string length, the vector checks how many unique observations there are when the strings are truncated using that length
+# the function then compares this number to the number of unique observations when at full string length
+# if this number is the same (i.e., truncating the string doesn't change the number of unique observations) it returns TRUE
+
+for (i in 5:36) {
+  if (
+    information_preserved(d$session, i) &&
+    information_preserved(d$observation, i)
+  ) {
+    break()
+  }
+}
+# check if more than five characters are needed to preserve the identifying information
+# for-loop breaks as soon as both expressions are evaluated as TRUE
+
+```
+
+Truncate ID strings to five characters:
+
+```{r}
+
+# Truncate IDs
+d <- d %>%
+  dplyr::mutate(session = str_sub(session, end = i),
+                unique_id = str_sub(unique_id, end = i))
+
+```
+
+Extract the actual data:
+
+```{r}
+
+# Create function that does this
+parseJSON <- function(input) {
+  return(input %>%
+           fromJSON(flatten = TRUE) %>% {
+             if (class(.) == 'list') {discard(., is.null) %>% as_tibble()}
+             else {.}
+             } %>%
+           janitor::clean_names() %>%
+           mutate_all(as.character))
+}
+
+# Get full data
+d.full <- d %>%
+  dplyr::filter(payload == 'full') %>%
+  group_by(unique_id, id) %>%
+  do({map_dfr(.$data, parseJSON)} %>%
+       bind_rows()) %>%
+  ungroup()
+
+```
+
+Get incremental data (in case the full data are not available).
+
+```{r}
+
+d.incremental <-
+  d %>%
+  dplyr::filter(payload %in% c('incremental', 'latest')) %>%
+  group_by(unique_id, id) %>%
+  do(
+    {map_dfr(.$data, parseJSON)} %>%
+      bind_rows()
+  ) %>%
+  ungroup()
+
+# # merge data sets
+# d.output <-
+#   d.full %>%
+#   bind_rows(d.incremental %>% filter(!(unique_id %in% d.full$unique_id)))
+
+# %>%
+#   type_convert()
+
+full_raw_data_df <- d.incremental
+
+```
+
+# write out
+
+```{r}
+
+write_csv(full_raw_data_df, paste0('raw/questionnaires_', format(Sys.Date(), "%d%m%Y"), '.csv'))
+
+```
