@@ -32,13 +32,13 @@ library(tidylog)
 ```{r}
 
 # spm t1 
-spm_t1_raw_df <- read_csv("raw/spm_11052022.csv")
+spm_t1_raw_df <- read_csv("raw/spm_data_06062022.csv")
 
 # rai t1 
-rai_t1_raw_df <- read_csv("raw/rai_11052022.csv")
+rai_t1_raw_df <- read_csv("raw/rai_data_06062022.csv")
 
 # questionnaires t1 
-questionnaires_t1_raw_df <- read_csv("raw/questionnaires_11052022.csv")
+questionnaires_t1_raw_df <- read_csv("raw/questionnaires_data_06062022.csv")
 
 
 ```
@@ -49,7 +49,8 @@ questionnaires_t1_raw_df <- read_csv("raw/questionnaires_11052022.csv")
 
 demographics_df <- rai_t1_raw_df %>%
   filter(!is.na(wat_is_uw_geslacht),
-         age > 50) %>%
+         age > 50,
+         prolificid != "debackerinne@hotmail.com") %>%
   select(email = prolificid, gender = wat_is_uw_geslacht, age)
 
 ```
@@ -61,7 +62,8 @@ demographics_df <- rai_t1_raw_df %>%
 spm_df <- spm_t1_raw_df %>%
   select(email, correct_answer, response) %>%
   fill(email) %>%
-  filter(!is.na(correct_answer)) %>%
+  filter(!is.na(correct_answer),
+         email != "debackerinne@hotmail.com") %>%
   mutate(correct = case_when(correct_answer == response ~ 1,
                              TRUE ~ 0)) %>%
   select(-correct_answer, -response) %>%
@@ -81,8 +83,7 @@ rai_t1_raw_df %>%
   filter(prolificid == "globetrotster@hotmail.com")
 
 rai_df <- rai_t1_raw_df %>%
-  select(prolificid, trial_num, correct) %>%
-  rename(email = prolificid) %>%
+  select(email = prolificid, trial_num, correct) %>%
   fill(email) %>%
   group_by(email, trial_num) %>%
   filter(n() == 4) %>%
@@ -170,7 +171,7 @@ Establish SQL connection and extract main table:
 # Establish SQL connection
 con <-
   dbConnect(drv = RSQLite::SQLite(),
-            dbname = paste0('raw/questionnaires_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
+            dbname = paste0('raw/spm_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
 
 
 # Extract main table
@@ -305,6 +306,6 @@ full_raw_data_df <- d.incremental
 
 ```{r}
 
-write_csv(full_raw_data_df, paste0('raw/questionnaires_', format(Sys.Date(), "%d%m%Y"), '.csv'))
+write_csv(full_raw_data_df, paste0('raw/spm_data_', format(Sys.Date(), "%d%m%Y"), '.csv'))
 
 ```
