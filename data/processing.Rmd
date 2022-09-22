@@ -33,7 +33,7 @@ Establish SQL connection and extract main table:
 con <-
   dbConnect(drv = RSQLite::SQLite(),
             # GUYS: CHANGE THE BELOW DIRECTORY TO THE LOCATION AND NAME OF THE FILE
-            dbname = paste0('raw/questionnaire_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
+            dbname = paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
 
 
 # Extract main table
@@ -169,7 +169,7 @@ full_raw_data_df <- d.incremental
 ```{r}
 
 # CHANGE LOCATION AND NAME IN THE STRING TO BE WHERE YOU WANT TO SAVE THE FILE
-write_csv(full_raw_data_df, paste0("raw/questionnaire_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+write_csv(full_raw_data_df, paste0("raw/smart_", format(Sys.Date(), "%d%m%Y"), ".csv"))
 
 ```
 
@@ -213,16 +213,29 @@ write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", fo
 
 ```
 
+
+
+
+# training data 
+
+
 ```{r}
 
-library(RCurl)
+smart_raw_df <- read_csv(paste0("raw/smart_", format(Sys.Date(), "%d%m%Y"), ".csv"))
 
-myCsv <- getURL("ftp://ftp.drjamiecumminscom.webhosting.be/md/vragenlijst/data/data.sqlite", ssl.verifypeer = FALSE)
-myData <- read.csv(textConnection(myCsv))
-myData
+view_df <- smart_raw_df |>
+  group_by(unique_id) |>
+  fill(email, .direction = "downup") |>
+  ungroup() |>
+  count(email, unique_id, str_sub(timestamp, 1, 10))
+  filter(str_detect(id, ""))
 
-"ftp://ftp.drjamiecumminscom.webhosting.be/md/vragenlijst/data/data.sqlite"
+smart_raw_df |>
+  colnames()
+
 
 ```
+
+
 
 
