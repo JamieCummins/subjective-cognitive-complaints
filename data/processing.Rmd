@@ -18,10 +18,35 @@ library(pacman)
 library(knitr)
 library(kableExtra)
 library(lubridate) 
-library(tidylog)
+library(RCurl)
+library(threadr)
+library(emayili)
 
 ```
 
+
+# download data from server and save to specific location 
+
+```{r}
+
+## Change these:
+### make sure you leave the "data.sqlite" and "data.csv" bits
+download_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('processed/smart_data_', format(Sys.Date(), "%d%m%Y"), '.csv')
+
+
+## Do not change these:
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-1/data/data.sqlite"
+credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
+
+
+
+# download questionnaire data and save it to location
+download_ftp_file(file_remote = url,
+                  file_local = download_location,
+                  credentials = credentials)
+
+```
 
 # Converting SQL data
 
@@ -33,7 +58,7 @@ Establish SQL connection and extract main table:
 con <-
   dbConnect(drv = RSQLite::SQLite(),
             # GUYS: CHANGE THE BELOW DIRECTORY TO THE LOCATION AND NAME OF THE FILE
-            dbname = paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite'))
+            dbname = download_location)
 
 
 # Extract main table
@@ -169,19 +194,10 @@ full_raw_data_df <- d.incremental
 ```{r}
 
 # CHANGE LOCATION AND NAME IN THE STRING TO BE WHERE YOU WANT TO SAVE THE FILE
-write_csv(full_raw_data_df, paste0("raw/smart_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+write_csv(full_raw_data_df, save_location)
 
 ```
 
-
-```{r}
-
-# read in assessments 
-
-# CHANGE LOCATION AND NAME TO WHERE THE .CSV FILE IS SAVED
-questionnaire_raw_df <- read_csv("raw/questionnaire_06052022.csv") 
-
-```
 
 Notes to self:
 
@@ -196,24 +212,22 @@ Notes to self:
 
 ```{r}
 
-questionnaire_df <- questionnaire_raw_df %>%
-  filter(!is.na(wat_is_uw_e_mailadres)) %>%
-  select(email = wat_is_uw_e_mailadres,
-         age = wat_is_uw_leeftijd,
-         complaints = welke_cognitieve_klachten_heeft_u,
-         preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
-         brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
+# questionnaire_df <- questionnaire_raw_df %>%
+#   filter(!is.na(wat_is_uw_e_mailadres)) %>%
+#   select(email = wat_is_uw_e_mailadres,
+#          age = wat_is_uw_leeftijd,
+#          complaints = welke_cognitieve_klachten_heeft_u,
+#          preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
+#          brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
 
 ```
 
 
 ```{r}
 
-write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+# write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", format(Sys.Date(), "%d%m%Y"), ".csv"))
 
 ```
-
-
 
 
 # training data 
@@ -221,18 +235,18 @@ write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", fo
 
 ```{r}
 
-smart_raw_df <- read_csv(paste0("raw/smart_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+smart_raw_df <- read_csv(save_location)
 
 view_df <- smart_raw_df |>
   group_by(unique_id) |>
-  fill(email, .direction = "downup") |>
+  fill(email, .direction = "downup") %>%
   ungroup() |>
-  count(email, unique_id, str_sub(timestamp, 1, 10))
-  filter(str_detect(id, ""))
+  count(email, unique_id, password, stage, str_sub(timestamp, 1, 10)) |>
+  filter(str_detect(email, "vanroosbroecka@gmail.com"),
+         password != "CLEARED")
 
 smart_raw_df |>
   colnames()
-
 
 ```
 
