@@ -32,7 +32,7 @@ library(emayili)
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
 download_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('processed/smart_data_', format(Sys.Date(), "%d%m%Y"), '.csv')
+save_location <- paste0('processed/smart_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Do not change these:
@@ -194,7 +194,7 @@ full_raw_data_df <- d.incremental
 ```{r}
 
 # CHANGE LOCATION AND NAME IN THE STRING TO BE WHERE YOU WANT TO SAVE THE FILE
-write_csv(full_raw_data_df, save_location)
+write_rds(full_raw_data_df, save_location)
 
 ```
 
@@ -235,14 +235,14 @@ Notes to self:
 
 ```{r}
 
-smart_raw_df <- read_csv(save_location)
+smart_raw_df <- read_rds(save_location)
 
 view_df <- smart_raw_df |>
   group_by(unique_id) |>
   fill(email, .direction = "downup") %>%
   ungroup() |>
   count(email, unique_id, password, stage, str_sub(timestamp, 1, 10)) |>
-  filter(str_detect(email, "vanroosbroecka@gmail.com"),
+  filter(str_detect(email, "Martinpnck@hotmail.com"),
          password != "CLEARED")
 
 smart_raw_df |>
