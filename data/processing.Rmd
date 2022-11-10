@@ -177,15 +177,12 @@ d.incremental <-
   ) %>%
   ungroup()
 
-# # merge data sets
-# d.output <-
-#   d.full %>%
-#   bind_rows(d.incremental %>% filter(!(unique_id %in% d.full$unique_id)))
+# merge data sets
+d.output <-
+  d.full %>%
+  bind_rows(d.incremental %>% filter(!(unique_id %in% d.full$unique_id)))
 
-# %>%
-#   type_convert()
-
-full_raw_data_df <- d.incremental
+full_raw_data_df <- d.output
 
 ```
 
@@ -242,7 +239,7 @@ view_df <- smart_raw_df |>
   fill(email, .direction = "downup") %>%
   ungroup() |>
   count(email, unique_id, password, stage, str_sub(timestamp, 1, 10)) |>
-  filter(str_detect(email, "Martinpnck@hotmail.com"),
+  filter(str_detect(email, "emilypuck.shop@gmail.com"),
          password != "CLEARED")
 
 smart_raw_df |>
