@@ -16,8 +16,8 @@ library(emayili)
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- "/Users/jamiecummins/git/subjective-cognitive-complaints/data/raw/data.sqlite"
-save_location <- "/Users/jamiecummins/git/subjective-cognitive-complaints/data/processed/data.csv"
+download_location <- "C:/Users/madlabie/Documents/SCC_study/subjective-cognitive-complaints/data/raw/data.sqlite"
+save_location <- "C:/Users/madlabie/Documents/SCC_study/subjective-cognitive-complaints/data/processed/data.csv"
 
 
 ## Do not change these:
