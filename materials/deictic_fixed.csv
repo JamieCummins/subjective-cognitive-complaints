@@ -1,0 +1,17 @@
+block;stim_1_id;relation_1_verb;relation_1_place;relation_1_time;stim_2_id;relation_2_verb;relation_2_place;relation_2_time;switch_1;switch_2_stim_1_id;switch_2_verb;switch_2_stim_2_id;switch_2_and;switch_2_if;q_word;q_stim_1_id;q_rel_place;q_rel_time;correct_response;trial_num
+7;1;is;hier;;2;is;daar;;Als hier daar is en daar hier is;;;;;;Is;1;daar;;yes;97
+7;1;is;hier;;2;is;daar;;Als hier daar is en daar hier is;;;;;;Is;2;hier;;yes;98
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;;;;;;Is;1;hier ;nu;no;99
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;;;;;;Was;1;daar ;toen;no;100
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;;;;;;Was;1;hier ;toen;yes;101
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;;;;;;Is;1;daar ;nu;no;102
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;1;is;2;en;als;Was;1;hier ;toen;yes;103
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;1;is;2;en;als;Was;1;daar ;toen;no;104
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;1;is;2;en;als;Is;2;hier ;nu;no;105
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;1;is;2;en;als;Was;2;hier ;toen;no;106
+7;1;is;hier;nu;2;was;daar;toen;Als hier daar is en daar hier is;1;is;2;en;als;Was;2;daar ;toen;no;107
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;1;is;2;en;als;Was;1;hier ;toen;no;108
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;1;is;2;en;als;Is;1;daar ;nu;yes;109
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;1;is;2;en;als;Was;1;daar ;toen;no;110
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;1;is;2;en;als;Was;2;hier ;toen;yes;111
+7;1;is;hier;nu;2;was;daar;toen;Als nu toen is en toen nu is;1;is;2;en;als;Was;2;daar ;toen;no;112
