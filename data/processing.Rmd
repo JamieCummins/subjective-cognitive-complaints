@@ -35,7 +35,16 @@ download_location <- paste0('raw/assessments/rai_', format(Sys.Date(), "%d%m%Y")
 save_location <- paste0('raw/assessments/rai_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
-## Do not change these:
+## Change these to specify which procedure you want to download:
+
+### Required endings of url:
+#### For RAI: rai-elaborated-nl/data/data.sqlite
+#### For SPM: spm-nl/data/data.sqlite
+#### For self-reports: b_qol_gds/data/data.sqlite
+#### For SMART: training-1/data/data.sqlite
+#### For NBACK: training-2/data/data.sqlite
+
+
 url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/rai-elaborated-nl/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
