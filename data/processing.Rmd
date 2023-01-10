@@ -31,12 +31,12 @@ library(emayili)
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('processed/smart_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+download_location <- paste0('raw/assessments/rai_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/assessments/rai_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Do not change these:
-url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-1/data/data.sqlite"
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/rai-elaborated-nl/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
 
@@ -249,4 +249,175 @@ smart_raw_df |>
 
 
 
+# Actual Processing Script
 
+```{r}
+
+library(tidyverse)
+
+rai_raw_df <- read_rds("raw/assessments/rai_03012023.rds") |>
+  fill(prolificid, .direction = "downup") |>
+  rename(email = prolificid) |>
+  mutate(timestamp = lubridate::date(timestamp),
+         email = tolower(email))
+spm_raw_df <- read_rds("raw/assessments/spm_03012023.rds") |>
+  fill(email, .direction = "downup") |>
+  mutate(timestamp = lubridate::date(timestamp),
+         email = tolower(email))
+self_reports_raw_df <- read_rds("raw/assessments/self_reports_03012023.rds") |>
+  fill(wat_is_uw_email, .direction = "downup") |>
+  rename(email = wat_is_uw_email) |>
+  mutate(timestamp = lubridate::date(timestamp),
+         email = tolower(email))
+
+conditions_df <- read_csv2("conditions.csv") |>
+  select(email, condition)
+
+```
+
+# process Raven's
+
+```{r}
+
+complete_spm_sessions <- spm_raw_df |>
+  filter(!is.na(main_image)) |>
+  group_by(unique_id, timestamp) |>
+  filter(n() == 60) |>
+  ungroup() |>
+  distinct(unique_id) |>
+  as_vector()
+
+# process Raven's Matrices
+fluid_iq_df <- spm_raw_df |>
+  filter(unique_id %in% complete_spm_sessions,
+         !is.na(correct_answer)) |>
+  mutate(correct = case_when(correct_answer == response ~ 1,
+                             TRUE ~ 0)) |>
+  group_by(email, timestamp) |>
+  summarise(ravens_raw_score = sum(as.numeric(correct)),
+            ravens_duration_minutes = sum(as.numeric(duration)) / (1000 * 60)) |>
+  ungroup() |>
+  mutate(fluid_iq = case_when(ravens_raw_score < 21 ~ 65,
+                              ravens_raw_score > 20 & ravens_raw_score < 25 ~ 66,
+                              ravens_raw_score == 25 ~ 67,
+                              ravens_raw_score == 26 ~ 68,
+                              ravens_raw_score == 27 ~ 69,
+                              ravens_raw_score == 28 ~ 70,
+                              ravens_raw_score == 29 ~ 70,
+                              ravens_raw_score == 30 ~ 71,
+                              ravens_raw_score == 31 ~ 74,
+                              ravens_raw_score == 32 ~ 74,
+                              ravens_raw_score == 33 ~ 75,
+                              ravens_raw_score == 34 ~ 76,
+                              ravens_raw_score == 35 ~ 77,
+                              ravens_raw_score == 36 ~ 80,
+                              ravens_raw_score == 37 ~ 82,
+                              ravens_raw_score == 38 ~ 83,
+                              ravens_raw_score == 39 ~ 85,
+                              ravens_raw_score == 40 ~ 87,
+                              ravens_raw_score == 41 ~ 89,
+                              ravens_raw_score == 42 ~ 90,
+                              ravens_raw_score == 43 ~ 91,
+                              ravens_raw_score == 44 ~ 94,
+                              ravens_raw_score == 45 ~ 96,
+                              ravens_raw_score == 46 ~ 98,
+                              ravens_raw_score == 47 ~ 100,
+                              ravens_raw_score == 48 ~ 103,
+                              ravens_raw_score == 49 ~ 104,
+                              ravens_raw_score == 50 ~ 107,
+                              ravens_raw_score == 51 ~ 109,
+                              ravens_raw_score == 52 ~ 111,
+                              ravens_raw_score == 53 ~ 114,
+                              ravens_raw_score == 54 ~ 116,
+                              ravens_raw_score == 55 ~ 120,
+                              ravens_raw_score == 56 ~ 123,
+                              ravens_raw_score == 57 ~ 124,
+                              ravens_raw_score == 58 ~ 127,
+                              ravens_raw_score == 59 ~ 130,
+                              ravens_raw_score == 60 ~ 132)) %>%
+  # full_join(conditions_df) %>%
+  
+  # need to do percentile scores properly
+  mutate(ravens_percentile = round(percent_rank(as.numeric(ravens_raw_score)), 2))
+
+# spm_complete_data <- fluid_iq_df |>
+#   group_by(email) |>
+#   filter(n() == 2) |>
+#   ungroup() |>
+#   pull(email) 
+
+```
+
+# process RAI
+
+```{r}
+
+complete_rai_sessions <- rai_raw_df |>
+  filter(trial_num != "NA") |>
+  group_by(unique_id, timestamp) |>
+  distinct(trial_num, timestamp, .keep_all = TRUE) |>
+  filter(n() == 128) |>
+  ungroup() |>
+  distinct(unique_id) |>
+  as_vector()
+
+relational_task_trials_df <- rai_raw_df %>%
+  filter(unique_id %in% complete_rai_sessions) %>%
+  group_by(email, timestamp) %>%
+  fill(total_correct, .direction = "downup") %>%
+  mutate(total_correct = as.numeric(lead(total_correct)),
+         duration = as.numeric(duration),
+         correct = as.numeric(as.logical(correct))) %>%
+  ungroup() %>%
+  filter(sender == "trial" & trial_num != "XXX") %>%
+  select(email, timestamp, unique_id, correct, block, correct_response, response, duration, total_correct) %>%
+  group_by(email, timestamp) %>%
+  mutate(n_trials_completed = n(),
+         rts_criterion = case_when(quantile(duration, .5) >= 5000 ~ 1,
+                               TRUE ~ 0)) %>%
+  mutate(trial_type = case_when(block == 1 ~ "opposition",
+                                block == 2 ~ "difference",
+                                block == 3 ~ "quantity",
+                                block == 4 ~ "temporal",
+                                block == 5 ~ "containment",
+                                block == 6 ~ "analogy",
+                                block == 7 ~ "deictic",
+                                block == 8 | block == 9 ~ "mathematical")) %>%
+  group_by(email, timestamp, trial_type) %>%
+  mutate(correct = case_when(is.na(correct) ~ 0,
+                             TRUE ~ correct),
+         trial_score = mean(correct)) %>%
+  ungroup()
+
+
+# get overall score
+relational_task_overall_scores_df <- relational_task_trials_df %>%
+  arrange(email, timestamp, total_correct) %>%
+  group_by(email, timestamp) %>%
+  summarise_all(last) %>%
+  mutate(relational_score = (total_correct / n_trials_completed)) %>%
+  ungroup() %>%
+  select(email, timestamp, relational_score, rts_criterion)
+
+rai_complete_data <- relational_task_overall_scores_df %>%
+  group_by(email) %>%
+  filter(n() == 2) %>%
+  ungroup() %>%
+  pull(email) 
+
+```
+
+
+# combined df
+
+```{r}
+
+group_level_df <- fluid_iq_df |>
+  full_join(relational_task_overall_scores_df) |>
+  full_join(conditions_df) |>
+  group_by(email) |>
+  filter(n() == 2)
+
+
+
+```
