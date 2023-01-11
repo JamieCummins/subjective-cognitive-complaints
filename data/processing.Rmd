@@ -243,10 +243,12 @@ smart_raw_df <- read_rds(save_location)
 view_df <- smart_raw_df |>
   group_by(unique_id) |>
   fill(email, .direction = "downup") %>%
+  fill(stage, .direction = "downup") |>
+  mutate(stage = as.numeric(stage)) |>
   ungroup() |>
-  count(email, unique_id, password, stage, timestamp = str_sub(timestamp, 1, 10)) |>
-  filter(str_detect(email, "emilypuck.shop@gmail.com"),
-         password != "CLEARED")
+  count(email, unique_id, stage, timestamp = str_sub(timestamp, 1, 10)) |>
+  filter(str_detect(email, "emilypuck.shop@gmail.com")) |>
+  select(-n)
 
 smart_raw_df |>
   colnames()
