@@ -236,6 +236,11 @@ Below is the code for processing the data downloaded above
 
 ```{r}
 
+# run the two below lines together at the same time
+set.seed(42)
+passwords <- data.frame(password = sample(c(1000:9999), 118),
+                        stage = as.numeric(c(5:122)))
+
 # example of a manually specified directory 
 ## "raw/training/smart_data_28112022.rds"
 smart_raw_df <- read_rds(save_location)
@@ -248,7 +253,8 @@ view_df <- smart_raw_df |>
   ungroup() |>
   count(email, unique_id, stage, timestamp = str_sub(timestamp, 1, 10)) |>
   filter(str_detect(email, "emilypuck.shop@gmail.com")) |>
-  select(-n)
+  select(-n) |>
+  left_join(passwords)
 
 smart_raw_df |>
   colnames()
