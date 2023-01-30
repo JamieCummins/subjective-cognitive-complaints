@@ -256,8 +256,31 @@ view_df <- smart_raw_df |>
   select(-n) |>
   left_join(passwords)
 
-smart_raw_df |>
-  colnames()
+
+```
+
+# Weekly completions
+
+The below chunk tells you how many sessions the named participants completed in the previous week. If the participant you are looking for isn't listed, then they (probably) haven't done the training in the past week. 
+
+```{r}
+
+smart_raw_df <- read_rds(save_location)
+
+seven_days_ago <- as.Date(Sys.Date() - 7) 
+  
+
+weekly_df <- smart_raw_df |>
+  group_by(unique_id) |>
+  fill(email, .direction = "downup") |>
+  fill(timestamp, .direction = "downup") |>
+  filter(sender != "Welcome") |>
+  ungroup() |>
+  select(timestamp, email, unique_id) |>
+  mutate(timestamp = as.Date(timestamp)) |>
+  filter(timestamp >= seven_days_ago) |>
+  distinct(email, timestamp) |>
+  count(email)
 
 ```
 
