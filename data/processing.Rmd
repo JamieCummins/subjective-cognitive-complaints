@@ -436,11 +436,11 @@ relational_task_overall_scores_df <- relational_task_trials_df %>%
   ungroup() %>%
   select(email, timestamp, relational_score, rts_criterion)
 
-rai_complete_data <- relational_task_overall_scores_df %>%
-  group_by(email, timepoint) %>%
-  filter(n() == 2) %>%
-  ungroup() %>%
-  pull(email) 
+# rai_complete_data <- relational_task_overall_scores_df %>%
+#   group_by(email, timepoint) %>%
+#   filter(n() == 2) %>%
+#   ungroup() %>%
+#   pull(email) 
 
 ```
 
@@ -454,7 +454,5 @@ group_level_df <- fluid_iq_df |>
   full_join(conditions_df) |>
   group_by(email) |>
   filter(n() == 2)
-
-
 
 ```
