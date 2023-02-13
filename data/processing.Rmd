@@ -31,8 +31,8 @@ library(emayili)
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+download_location <- paste0('raw/training/nback_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/training/nback_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Change these to specify which procedure you want to download:
@@ -44,7 +44,7 @@ save_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y")
 #### For SMART: training-1/data/data.sqlite
 #### For NBACK: training-2/data/data.sqlite
 
-url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-1/data/data.sqlite"
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-2/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
 
@@ -186,9 +186,8 @@ d.incremental <-
   ungroup()
 
 # merge data sets
-d.output <-
-  d.full %>%
-  bind_rows(d.incremental %>% filter(!(unique_id %in% d.full$unique_id)))
+d.output <- d.incremental
+ 
 
 full_raw_data_df <- d.output
 
@@ -243,20 +242,27 @@ passwords <- data.frame(password = sample(c(1000:9999), 118),
 
 # example of a manually specified directory 
 ## "raw/training/smart_data_28112022.rds"
-smart_raw_df <- read_rds(save_location)
+raw_df <- read_rds(save_location)
 
-view_df <- smart_raw_df |>
+view_smart_df <- raw_df |>
   group_by(unique_id) |>
   fill(email, .direction = "downup") %>%
   fill(stage, .direction = "downup") |>
   mutate(stage = as.numeric(stage)) |>
   ungroup() |>
   count(email, unique_id, stage, timestamp = str_sub(timestamp, 1, 10)) |>
-  filter(str_detect(email, "emilypuck.shop@gmail.com")) |>
+  filter(str_detect(email, "heymansmarcel50@gmail.com")) |>
   select(-n) |>
   left_join(passwords)
 
-
+view_nback_df <- nback_raw_df |>
+  group_by(unique_id) |>
+  fill(id, .direction = "downup") %>%
+  ungroup() |>
+  count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
+  filter(str_detect(id, "heymansmarcel50@gmail.com")) |>
+  select(-n) |>
+  
 ```
 
 # Weekly completions
