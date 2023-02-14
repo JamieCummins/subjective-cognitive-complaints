@@ -191,12 +191,6 @@ d.output <- d.incremental
 
 full_raw_data_df <- d.output
 
-```
-
-# write out and save rds objects
-
-```{r}
-
 # this saves the data as a .rds file to the save_location you set at the top of the script 
 write_rds(full_raw_data_df, save_location)
 
@@ -235,6 +229,10 @@ Below is the code for processing the data downloaded above
 
 ```{r}
 
+smart_raw_df <- read_rds("raw/training/smart_data_13022023.rds")
+
+
+###### For SMART #######
 # run the two below lines together at the same time
 set.seed(42)
 passwords <- data.frame(password = sample(c(1000:9999), 118),
@@ -255,13 +253,15 @@ view_smart_df <- raw_df |>
   select(-n) |>
   left_join(passwords)
 
+
+###### For NBACK #######
 view_nback_df <- nback_raw_df |>
   group_by(unique_id) |>
   fill(id, .direction = "downup") %>%
   ungroup() |>
   count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
   filter(str_detect(id, "heymansmarcel50@gmail.com")) |>
-  select(-n) |>
+  select(-n)
   
 ```
 
@@ -276,7 +276,8 @@ smart_raw_df <- read_rds(save_location)
 seven_days_ago <- as.Date(Sys.Date() - 7) 
   
 
-weekly_df <- smart_raw_df |>
+weekly_smart_df <- smart_raw_df |>
+  mutate(email = tolower(email)) |>
   group_by(unique_id) |>
   fill(email, .direction = "downup") |>
   fill(timestamp, .direction = "downup") |>
@@ -287,6 +288,19 @@ weekly_df <- smart_raw_df |>
   filter(timestamp >= seven_days_ago) |>
   distinct(email, timestamp) |>
   count(email)
+
+weekly_nback_df <- nback_raw_df |>
+  mutate(id = tolower(id)) |>
+  group_by(unique_id) |>
+  fill(id, .direction = "downup") |>
+  fill(timestamp, .direction = "downup") |>
+  filter(sender != "Welcome") |>
+  ungroup() |>
+  select(timestamp, id, unique_id) |>
+  mutate(timestamp = as.Date(timestamp)) |>
+  filter(timestamp >= seven_days_ago) |>
+  distinct(id, timestamp) |>
+  count(id)
 
 ```
 
