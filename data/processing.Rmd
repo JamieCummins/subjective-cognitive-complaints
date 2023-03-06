@@ -31,8 +31,8 @@ library(emayili)
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- paste0('raw/assessments/self_reports_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('raw/assessments/self_reports_', format(Sys.Date(), "%d%m%Y"), '.rds')
+download_location <- paste0('raw/training/nback_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/training/nback_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Change these to specify which procedure you want to download:
@@ -44,7 +44,7 @@ save_location <- paste0('raw/assessments/self_reports_', format(Sys.Date(), "%d%
 #### For SMART: training-1/data/data.sqlite
 #### For NBACK: training-2/data/data.sqlite
 
-url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/b_qol_gds/data/data.sqlite"
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-2/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
 
@@ -229,7 +229,7 @@ Below is the code for processing the data downloaded above
 
 ```{r}
 
-nback_raw_df <- read_rds("raw/training/nback_data_14022023.rds")
+nback_raw_df <- read_rds("raw/training/nback_data_28022023.rds")
 
 
 ###### For SMART #######
@@ -260,7 +260,7 @@ view_nback_df <- nback_raw_df |>
   fill(id, .direction = "downup") %>%
   ungroup() |>
   count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
-  filter(str_detect(id, "heymansmarcel50@gmail.com"))
+  
   select(-n)
   
 ```
