@@ -1,0 +1,296 @@
+---
+title: "processing"
+author: "Jamie Cummins"
+date: "3/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# install.packages("Hmisc")
+
+library(Hmisc)
+library(RSQLite)
+library(jsonlite)
+library(tidyverse)
+library(janitor)
+library(pacman)
+library(knitr)
+library(kableExtra)
+library(lubridate) 
+library(RCurl)
+library(threadr)
+
+```
+
+
+# download data from server and save to specific location 
+
+```{r}
+
+# indicate training type
+# or: "nback"
+training_type <- "nback"
+
+## Change these:
+### make sure you leave the "data.sqlite" and "data.csv" bits
+download_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+
+
+## Change these to specify which procedure you want to download:
+
+### Required endings of url:
+#### For RAI: rai-elaborated-nl/data/data.sqlite
+#### For SPM: spm-nl/data/data.sqlite
+#### For self-reports: b_qol_gds/data/data.sqlite
+#### For SMART: training-1/data/data.sqlite
+#### For NBACK: training-2/data/data.sqlite
+
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-2/data/data.sqlite"
+credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
+
+
+
+# download questionnaire data and save it to location
+download_ftp_file(file_remote = url,
+                  file_local = download_location,
+                  credentials = credentials)
+
+```
+
+# Converting SQL data
+
+Establish SQL connection and extract main table:
+
+```{r}
+
+# Establish SQL connection
+con <-
+  dbConnect(drv = RSQLite::SQLite(),
+            # GUYS: CHANGE THE BELOW DIRECTORY TO THE LOCATION AND NAME OF THE FILE
+            dbname = download_location)
+
+
+# Extract main table
+d <-
+  dbGetQuery(conn = con,
+             statement = 'SELECT * FROM labjs')
+
+# Close and discard connection
+dbDisconnect(conn = con)
+rm(con)
+
+```
+
+* id: row number
+* session: generated identifier for each individual session (one per participant)
+* timestamp
+* url
+* metadata: also includes a variable "id" which corresponds to individual sessions
+* data: the actual data
+
+Process metadata and combine with the rest:
+
+```{r}
+
+d.meta <-
+  map_dfr(d$metadata, fromJSON) %>% # apply JSON function to the metadata
+  dplyr::rename(unique_id = id) # rename to avoid confusion
+
+d <- d %>%
+  bind_cols(d.meta) %>%
+  select(-metadata)
+
+```
+
+* slice: the number of the entry for that specific subject
+* observation: what we will use as subject identifier
+* payload: tells you whether the data are complete (full) or not (incremental)
+
+See by how much subject identifiers can be shortened:
+
+```{r}
+
+count_unique <- function(x) {
+  return(length(unique(x)))
+}
+# returns how many unique observations there are in a given vector
+
+information_preserved <- function(x, length) {
+  return(count_unique(str_sub(x, end = i)) == count_unique(x))
+}
+# put in a vector and a string length
+# for that string length, the vector checks how many unique observations there are when the strings are truncated using that length
+# the function then compares this number to the number of unique observations when at full string length
+# if this number is the same (i.e., truncating the string doesn't change the number of unique observations) it returns TRUE
+
+for (i in 5:36) {
+  if (
+    information_preserved(d$session, i) &&
+    information_preserved(d$observation, i)
+  ) {
+    break()
+  }
+}
+# check if more than five characters are needed to preserve the identifying information
+# for-loop breaks as soon as both expressions are evaluated as TRUE
+
+```
+
+Truncate ID strings to five characters:
+
+```{r}
+
+# Truncate IDs
+d <- d %>%
+  dplyr::mutate(session = str_sub(session, end = i),
+                unique_id = str_sub(unique_id, end = i))
+
+```
+
+Extract the actual data:
+
+```{r}
+
+# Create function that does this
+parseJSON <- function(input) {
+  return(input %>%
+           fromJSON(flatten = TRUE) %>% {
+             if (class(.) == 'list') {discard(., is.null) %>% as_tibble()}
+             else {.}
+             } %>%
+           janitor::clean_names() %>%
+           mutate_all(as.character))
+}
+
+# Get full data
+d.full <- d %>%
+  dplyr::filter(payload == 'full') %>%
+  group_by(unique_id, id) %>%
+  do({map_dfr(.$data, parseJSON)} %>%
+       bind_rows()) %>%
+  ungroup()
+
+```
+
+Get incremental data (in case the full data are not available).
+
+```{r}
+
+d.incremental <-
+  d %>%
+  dplyr::filter(payload %in% c('incremental', 'latest')) %>%
+  group_by(unique_id, id) %>%
+  do(
+    {map_dfr(.$data, parseJSON)} %>%
+      bind_rows()
+  ) %>%
+  ungroup()
+
+# merge data sets
+d.output <- d.incremental
+ 
+
+full_raw_data_df <- d.output
+
+# this saves the data as a .rds file to the save_location you set at the top of the script 
+write_rds(full_raw_data_df, save_location)
+
+```
+
+
+#######
+Below is the code for processing the data downloaded above
+#######
+
+# load the most recent SMART and NBACK data
+
+```{r}
+
+smart_raw_df <- read_rds(paste0("raw/training/smart_data_", format(Sys.Date(), "%d%m%Y"), ".rds"))
+nback_raw_df <- read_rds(paste0("raw/training/nback_data_", format(Sys.Date(), "%d%m%Y"), ".rds"))
+
+```
+
+# training data 
+
+```{r}
+
+###### For SMART #######
+# run the two below lines together at the same time
+set.seed(42)
+passwords <- data.frame(password = sample(c(1000:9999), 118),
+                        stage = as.numeric(c(5:122)))
+
+# view_smart_df <- smart_raw_df |>
+#   group_by(unique_id) |>
+#   mutate(participant_id = case_when(sum(is.na(email)) == n() ~ participant_id,
+#                                     TRUE ~ email)) |>
+#   fill(participant_id, .direction = "downup") %>%
+#   fill(stage, .direction = "downup") |>
+#   mutate(stage = as.numeric(stage)) |>
+#   ungroup() |>
+#   count(participant_id, unique_id, stage, timestamp = str_sub(timestamp, 1, 10)) |>
+#   
+#   select(-n) |>
+#   left_join(passwords)
+
+
+###### For NBACK #######
+# view_nback_df <- nback_raw_df |>
+#   group_by(unique_id) |>
+#   fill(id, .direction = "downup") %>%
+#   ungroup() |>
+#   count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
+# 
+#   select(-n)
+  
+```
+
+# Weekly completions
+
+The below chunk tells you how many sessions the named participants completed in the previous week. If the participant you are looking for isn't listed, then they (probably) haven't done the training in the past week. 
+
+```{r}
+
+# if you would want to check from a specific date:
+# seven_days_ago <- as.Date("2023-04-01")
+seven_days_ago <- as.Date(Sys.Date() - 7) 
+
+weekly_smart_df <- smart_raw_df |>
+  mutate(participant_id = tolower(participant_id)) |>
+  group_by(unique_id) |>
+  fill(participant_id, .direction = "downup") |>
+  fill(timestamp, .direction = "downup") |>
+  filter(sender != "Welcome") |>
+  ungroup() |>
+  select(timestamp, participant_id, unique_id) |>
+  mutate(timestamp = as.Date(timestamp)) |>
+  filter(timestamp >= seven_days_ago) |>
+  group_by(unique_id) |>
+  filter(n() >= 500) |>
+  ungroup() |>
+  distinct(participant_id, timestamp) |>
+  count(participant_id) |>
+  write_csv(paste0("processed/smart_weekly_report_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+
+weekly_nback_df <- nback_raw_df |>
+  mutate(id = tolower(id)) |>
+  group_by(unique_id) |>
+  fill(id, .direction = "downup") |>
+  fill(timestamp, .direction = "downup") |>
+  filter(sender != "Welcome") |>
+  ungroup() |>
+  select(timestamp, id, unique_id) |>
+  mutate(timestamp = as.Date(timestamp)) |>
+  filter(timestamp >= seven_days_ago) |>
+  distinct(id, timestamp) |>
+  count(id) |>
+  write_csv(paste0("processed/nback_weekly_report_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+
+```
+
+

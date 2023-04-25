@@ -29,10 +29,14 @@ library(emayili)
 
 ```{r}
 
+# indicate training type
+# or: "nback"
+training_type <- "smart"
+
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('raw/training/smart_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+download_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Change these to specify which procedure you want to download:
@@ -206,13 +210,13 @@ Below is the code for processing the data downloaded above
 
 ```{r}
 
-# questionnaire_df <- questionnaire_raw_df %>%
-#   filter(!is.na(wat_is_uw_e_mailadres)) %>%
-#   select(email = wat_is_uw_e_mailadres,
-#          age = wat_is_uw_leeftijd,
-#          complaints = welke_cognitieve_klachten_heeft_u,
-#          preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
-#          brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
+questionnaire_df <- questionnaire_raw_df %>%
+  filter(!is.na(wat_is_uw_e_mailadres)) %>%
+  select(email = wat_is_uw_e_mailadres,
+         age = wat_is_uw_leeftijd,
+         complaints = welke_cognitieve_klachten_heeft_u,
+         preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
+         brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
 
 ```
 
@@ -224,25 +228,24 @@ Below is the code for processing the data downloaded above
 ```
 
 
-# training data 
-
+# load the most recent SMART and NBACK data
 
 ```{r}
 
-smart_raw_df <- read_rds("raw/training/smart_data_06032023.rds")
+smart_raw_df <- read_rds(paste0("raw/training/smart_data_", format(Sys.Date(), "%d%m%Y"), ".rds"))
+nback_raw_df <- read_rds(paste0("raw/training/nback_data_", format(Sys.Date(), "%d%m%Y"), ".rds"))
 
-smart_raw_df |>
-  colnames()
+```
+
+# training data 
+
+```{r}
 
 ###### For SMART #######
 # run the two below lines together at the same time
 set.seed(42)
 passwords <- data.frame(password = sample(c(1000:9999), 118),
                         stage = as.numeric(c(5:122)))
-
-# example of a manually specified directory 
-## "raw/training/smart_data_28112022.rds"
-raw_df <- read_rds(save_location)
 
 view_smart_df <- smart_raw_df |>
   group_by(unique_id) |>
@@ -259,13 +262,13 @@ view_smart_df <- smart_raw_df |>
 
 
 ###### For NBACK #######
-view_nback_df <- nback_raw_df |>
-  group_by(unique_id) |>
-  fill(id, .direction = "downup") %>%
-  ungroup() |>
-  count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
-  
-  select(-n)
+# view_nback_df <- nback_raw_df |>
+#   group_by(unique_id) |>
+#   fill(id, .direction = "downup") %>%
+#   ungroup() |>
+#   count(id, unique_id, timestamp = str_sub(timestamp, 1, 10)) |>
+# 
+#   select(-n)
   
 ```
 
@@ -275,23 +278,25 @@ The below chunk tells you how many sessions the named participants completed in 
 
 ```{r}
 
-smart_raw_df <- read_rds(save_location)
-
+# if you would want to check from a specific date:
+# seven_days_ago <- as.Date("2023-04-01")
 seven_days_ago <- as.Date(Sys.Date() - 7) 
-  
 
 weekly_smart_df <- smart_raw_df |>
-  mutate(email = tolower(email)) |>
+  mutate(participant_id = tolower(participant_id)) |>
   group_by(unique_id) |>
-  fill(email, .direction = "downup") |>
+  fill(participant_id, .direction = "downup") |>
   fill(timestamp, .direction = "downup") |>
   filter(sender != "Welcome") |>
   ungroup() |>
-  select(timestamp, email, unique_id) |>
+  select(timestamp, participant_id, unique_id) |>
   mutate(timestamp = as.Date(timestamp)) |>
   filter(timestamp >= seven_days_ago) |>
-  distinct(email, timestamp) |>
-  count(email)
+  group_by(unique_id) |>
+  filter(n() >= 500) |>
+  ungroup() |>
+  distinct(participant_id, timestamp) |>
+  count(participant_id)
 
 weekly_nback_df <- nback_raw_df |>
   mutate(id = tolower(id)) |>
@@ -316,20 +321,26 @@ weekly_nback_df <- nback_raw_df |>
 
 library(tidyverse)
 
-rai_raw_df <- read_rds("raw/assessments/rai_20022023.rds") |>
+rai_raw_df <- read_rds("raw/assessments/rai_data_17042023.rds") |>
   fill(prolificid, .direction = "downup") |>
   rename(email = prolificid) |>
   mutate(timestamp = lubridate::date(timestamp),
          email = tolower(email))
-spm_raw_df <- read_rds("raw/assessments/spm_20022023.rds") |>
+spm_raw_df <- read_rds("raw/assessments/spm_data_17042023.rds") |>
   fill(email, .direction = "downup") |>
   mutate(timestamp = lubridate::date(timestamp),
          email = tolower(email))
-self_reports_raw_df <- read_rds("raw/assessments/self_reports_20022023.rds") |>
+self_reports_raw_df <- read_rds("raw/assessments/questionnaires_data_17042023.rds") |>
   fill(wat_is_uw_email, .direction = "downup") |>
   rename(email = wat_is_uw_email) |>
   mutate(timestamp = lubridate::date(timestamp),
          email = tolower(email))
+rbans_raw_df <- read_csv("raw/assessments/rbans_data_17042023.csv") |>
+  filter(!is.na(participant_email),
+         participant_email != "participant_email",
+         !is.na(scale)) |>
+  select(email = participant_email, 
+         scale, index_scores, timepoint)
 
 conditions_df <- read_csv2("conditions.csv") |>
   select(email, condition)
@@ -340,13 +351,24 @@ conditions_df <- read_csv2("conditions.csv") |>
 
 ```{r}
 
-complete_spm_sessions <- spm_raw_df |>
+complete_spm_sessions_and_timestamps <- spm_raw_df |>
   filter(!is.na(main_image)) |>
   group_by(unique_id, timestamp) |>
-  filter(n() == 60) |>
+  filter(n() > 58) |>
   ungroup() |>
+  distinct(email, timestamp, unique_id)
+
+timestamps_to_timepoint <- complete_spm_sessions_and_timestamps |>
+  arrange(email, timestamp) |>
+  group_by(email) |>
+  mutate(timepoint = row_number()) |>
+  filter(timepoint < 3) |>
+  ungroup()
+
+complete_spm_sessions <- timestamps_to_timepoint |>
   distinct(unique_id) |>
-  as_vector()
+  pull()
+
 
 # process Raven's Matrices
 fluid_iq_df <- spm_raw_df |>
@@ -354,7 +376,8 @@ fluid_iq_df <- spm_raw_df |>
          !is.na(correct_answer)) |>
   mutate(correct = case_when(correct_answer == response ~ 1,
                              TRUE ~ 0)) |>
-  group_by(email, timestamp) |>
+  left_join(timestamps_to_timepoint) |>
+  group_by(email, timepoint) |>
   summarise(ravens_raw_score = sum(as.numeric(correct)),
             ravens_duration_minutes = sum(as.numeric(duration)) / (1000 * 60)) |>
   ungroup() |>
@@ -413,26 +436,38 @@ fluid_iq_df <- spm_raw_df |>
 
 ```{r}
 
-complete_rai_sessions <- rai_raw_df |>
+complete_rai_sessions_and_timestamps <- rai_raw_df |>
   filter(trial_num != "NA") |>
   group_by(unique_id, timestamp) |>
   distinct(trial_num, timestamp, .keep_all = TRUE) |>
-  filter(n() == 128) |>
+  filter(n() > 126) |>
   ungroup() |>
+  distinct(email, timestamp, unique_id)
+
+timestamps_to_timepoint <- complete_rai_sessions_and_timestamps |>
+  arrange(email, timestamp) |>
+  group_by(email) |>
+  mutate(timepoint = row_number()) |>
+  filter(timepoint < 3) |>
+  ungroup()
+
+complete_rai_sessions <- timestamps_to_timepoint |>
   distinct(unique_id) |>
-  as_vector()
+  pull()
+
 
 relational_task_trials_df <- rai_raw_df %>%
   filter(unique_id %in% complete_rai_sessions) %>%
-  group_by(email, timestamp) %>%
+  left_join(timestamps_to_timepoint) |>
+  group_by(email, timepoint) %>%
   fill(total_correct, .direction = "downup") %>%
   mutate(total_correct = as.numeric(lead(total_correct)),
          duration = as.numeric(duration),
          correct = as.numeric(as.logical(correct))) %>%
   ungroup() %>%
   filter(sender == "trial" & trial_num != "XXX") %>%
-  select(email, timestamp, unique_id, correct, block, correct_response, response, duration, total_correct) %>%
-  group_by(email, timestamp) %>%
+  select(email, timepoint, unique_id, correct, block, correct_response, response, duration, total_correct) %>%
+  group_by(email, timepoint) %>%
   mutate(n_trials_completed = n(),
          rts_criterion = case_when(quantile(duration, .5) >= 5000 ~ 1,
                                TRUE ~ 0)) %>%
@@ -444,7 +479,7 @@ relational_task_trials_df <- rai_raw_df %>%
                                 block == 6 ~ "analogy",
                                 block == 7 ~ "deictic",
                                 block == 8 | block == 9 ~ "mathematical")) %>%
-  group_by(email, timestamp, trial_type) %>%
+  group_by(email, timepoint, trial_type) %>%
   mutate(correct = case_when(is.na(correct) ~ 0,
                              TRUE ~ correct),
          trial_score = mean(correct)) %>%
@@ -453,12 +488,12 @@ relational_task_trials_df <- rai_raw_df %>%
 
 # get overall score
 relational_task_overall_scores_df <- relational_task_trials_df %>%
-  arrange(email, timestamp, total_correct) %>%
-  group_by(email, timestamp) %>%
+  arrange(email, timepoint, total_correct) %>%
+  group_by(email, timepoint) %>%
   summarise_all(last) %>%
   mutate(relational_score = (total_correct / n_trials_completed)) %>%
   ungroup() %>%
-  select(email, timestamp, relational_score, rts_criterion)
+  select(email, timepoint, relational_score, rts_criterion)
 
 # rai_complete_data <- relational_task_overall_scores_df %>%
 #   group_by(email, timepoint) %>%
@@ -468,15 +503,121 @@ relational_task_overall_scores_df <- relational_task_trials_df %>%
 
 ```
 
+# questionnaire data
+
+```{r}
+
+complete_self_report_sessions_and_timestamps <- self_reports_raw_df |>
+  filter(sender == "GDS") |>
+  distinct(email, timestamp, unique_id)
+
+timestamps_to_timepoint <- complete_self_report_sessions_and_timestamps |>
+  arrange(email, timestamp) |>
+  group_by(email) |>
+  mutate(timepoint = row_number()) |>
+  filter(timepoint < 3) |>
+  ungroup()
+
+
+brief_df <- self_reports_raw_df |>
+  filter(sender == "scale") |>
+  select(email, unique_id, contains("brief")) |>
+  mutate(across(contains("brief"),
+         as.numeric),
+         brief_global_score = rowSums(across(contains("brief")))) |>
+  select(email, unique_id, brief_global_score) 
+  
+
+qol_df <- self_reports_raw_df |>
+  select(email, unique_id, mobility = mob_mobiliteit,
+         selfcare = zelfzorg_zelfzorg, dailyfunctioning = dagelijkse_dagelijkse,
+         pain = pijn_pijn, anxiety = angst_angst) |>
+  pivot_longer(cols = mobility:anxiety,
+               names_to = "item",
+               values_to = "response") |>
+  filter(!is.na(response)) |>
+  group_by(email, unique_id) |>
+  mutate(response = as.numeric(response)) |>
+  summarise(qol_score = mean(response)) |>
+  ungroup()
+
+depression_df <- self_reports_raw_df |>
+  filter(sender == "GDS") |>
+  select(email, unique_id, contains("gds")) |>
+  mutate(across(contains("gds"),
+                as.numeric),
+    across(contains("_r"),
+                ~case_when(. == 1 ~ 0,
+                          . == 0 ~ 1))) |>
+  pivot_longer(cols = gds_1_r:gds_15,
+               names_to = "item",
+               values_to = "response") |>
+  group_by(email, unique_id) |>
+  summarise(gds_score = sum(response)) |>
+  ungroup()
+  
+
+self_reports_cleaned_df <- timestamps_to_timepoint |>
+  left_join(depression_df) |>
+  left_join(brief_df) |>
+  left_join(qol_df) |>
+  select(-timestamp)
+
+```
+
+# RBANS
+
+```{r}
+
+complete_rbans_sessions <- rbans_raw_df |>
+  filter(scale == "total_scale",
+         !is.na(index_scores)) |>
+  group_by(email) |>
+  filter(n() == 2) |>
+  mutate(email = case_when(email == "Monji Zouaghi" ~ "monji@zouaghi.be",
+                           TRUE ~ email)) |>
+  pull(email)
+
+rbans_cleaned_df <- rbans_raw_df |>
+  filter(email %in% complete_rbans_sessions) |>
+  pivot_wider(names_from = "scale",
+              values_from = "index_scores",
+              names_prefix = "rbans_") |>
+  mutate(timepoint = as.numeric(timepoint))
+
+
+```
+
 
 # combined df
 
 ```{r}
 
-group_level_df <- fluid_iq_df |>
+conditions_df <- read_csv("conditions_17042023.csv") |>
+  select(contains("email")) |>
+  pivot_longer(cols = c(SMART_emails:NBACK_emails)) |>
+  rename(condition = name,
+         email = value) |>
+  mutate(condition = str_remove(condition, "_emails"),
+         email = case_when(email == "tyra@arntz.be" ~ "tyraarntz@gmail.com",
+                           email == "jos.nijst@gmail.com" ~ "jos.nijst@icloud.com",
+                           TRUE ~ email))
+
+
+group_level_df <- self_reports_cleaned_df |>
+  full_join(fluid_iq_df) |>
   full_join(relational_task_overall_scores_df) |>
+  full_join(rbans_cleaned_df) |>
   full_join(conditions_df) |>
+  mutate(email = case_when(email == "jos.nijst@gmail.com" ~ "jos.nijst@icloud.com",
+                   TRUE ~ email)) |>
   group_by(email) |>
-  filter(n() == 2)
+  filter(n() == 2) |>
+  ungroup() |>
+  select(-ravens_raw_score,
+         -ravens_duration_minutes,
+         -ravens_percentile,
+         -rts_criterion) |>
+  filter(!str_detect(email, "test"))
 
 ```

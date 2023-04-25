@@ -1,0 +1,221 @@
+---
+title: "questionnaire"
+author: "Jamie Cummins"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(Hmisc)
+library(RSQLite)
+library(jsonlite)
+library(tidyverse)
+library(janitor)
+library(pacman)
+library(knitr)
+library(kableExtra)
+library(lubridate) 
+library(RCurl)
+library(threadr)
+library(emayili)
+
+```
+
+
+# download data from server and save to specific location 
+
+```{r}
+
+## Change these:
+### make sure you leave the "data.sqlite" and "data.csv" bits
+download_location <- paste0('raw/assessments/', 'questionnaire_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/assessments/', 'questionnaire_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+
+
+## Change these to specify which procedure you want to download:
+
+
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/vragenlijst/data/data.sqlite"
+credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
+
+
+
+# download questionnaire data and save it to location
+download_ftp_file(file_remote = url,
+                  file_local = download_location,
+                  credentials = credentials)
+
+```
+
+# Converting SQL data
+
+Establish SQL connection and extract main table:
+
+```{r}
+
+# Establish SQL connection
+con <-
+  dbConnect(drv = RSQLite::SQLite(),
+            # GUYS: CHANGE THE BELOW DIRECTORY TO THE LOCATION AND NAME OF THE FILE
+            dbname = download_location)
+
+
+# Extract main table
+d <-
+  dbGetQuery(conn = con,
+             statement = 'SELECT * FROM labjs')
+
+# Close and discard connection
+dbDisconnect(conn = con)
+rm(con)
+
+```
+
+* id: row number
+* session: generated identifier for each individual session (one per participant)
+* timestamp
+* url
+* metadata: also includes a variable "id" which corresponds to individual sessions
+* data: the actual data
+
+Process metadata and combine with the rest:
+
+```{r}
+
+d.meta <-
+  map_dfr(d$metadata, fromJSON) %>% # apply JSON function to the metadata
+  dplyr::rename(unique_id = id) # rename to avoid confusion
+
+d <- d %>%
+  bind_cols(d.meta) %>%
+  select(-metadata)
+
+```
+
+* slice: the number of the entry for that specific subject
+* observation: what we will use as subject identifier
+* payload: tells you whether the data are complete (full) or not (incremental)
+
+See by how much subject identifiers can be shortened:
+
+```{r}
+
+count_unique <- function(x) {
+  return(length(unique(x)))
+}
+# returns how many unique observations there are in a given vector
+
+information_preserved <- function(x, length) {
+  return(count_unique(str_sub(x, end = i)) == count_unique(x))
+}
+# put in a vector and a string length
+# for that string length, the vector checks how many unique observations there are when the strings are truncated using that length
+# the function then compares this number to the number of unique observations when at full string length
+# if this number is the same (i.e., truncating the string doesn't change the number of unique observations) it returns TRUE
+
+for (i in 5:36) {
+  if (
+    information_preserved(d$session, i) &&
+    information_preserved(d$observation, i)
+  ) {
+    break()
+  }
+}
+# check if more than five characters are needed to preserve the identifying information
+# for-loop breaks as soon as both expressions are evaluated as TRUE
+
+```
+
+Truncate ID strings to five characters:
+
+```{r}
+
+# Truncate IDs
+d <- d %>%
+  dplyr::mutate(session = str_sub(session, end = i),
+                unique_id = str_sub(unique_id, end = i))
+
+```
+
+Extract the actual data:
+
+```{r}
+
+# Create function that does this
+parseJSON <- function(input) {
+  return(input %>%
+           fromJSON(flatten = TRUE) %>% {
+             if (class(.) == 'list') {discard(., is.null) %>% as_tibble()}
+             else {.}
+             } %>%
+           janitor::clean_names() %>%
+           mutate_all(as.character))
+}
+
+# Get full data
+d.full <- d %>%
+  dplyr::filter(payload == 'full') %>%
+  group_by(unique_id, id) %>%
+  do({map_dfr(.$data, parseJSON)} %>%
+       bind_rows()) %>%
+  ungroup()
+
+```
+
+Get incremental data (in case the full data are not available).
+
+```{r}
+
+d.incremental <-
+  d %>%
+  dplyr::filter(payload %in% c('incremental', 'latest')) %>%
+  group_by(unique_id, id) %>%
+  do(
+    {map_dfr(.$data, parseJSON)} %>%
+      bind_rows()
+  ) %>%
+  ungroup()
+
+# merge data sets
+d.output <- d.incremental
+ 
+
+full_raw_data_df <- d.output
+
+# this saves the data as a .rds file to the save_location you set at the top of the script 
+write_rds(full_raw_data_df, save_location)
+
+```
+
+
+
+
+
+# process demographics
+
+```{r}
+
+questionnaire_raw_df <- read_rds(paste0("raw/assessments/questionnaire_data_", format(Sys.Date(), "%d%m%Y"), ".rds"))
+
+questionnaire_df <- questionnaire_raw_df %>%
+  filter(!is.na(wat_is_uw_e_mailadres)) %>%
+  select(email = wat_is_uw_e_mailadres,
+         age = wat_is_uw_leeftijd,
+         complaints = welke_cognitieve_klachten_heeft_u,
+         preexisting_condition = hebt_u_een_bepaalde_neurologische_of_psychiatrische_diagnose,
+         brain_injury = hebt_u_ooit_een_hersenletsel_gehad)
+
+```
+
+
+```{r}
+
+write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", format(Sys.Date(), "%d%m%Y"), ".csv"))
+
+```
+
+
