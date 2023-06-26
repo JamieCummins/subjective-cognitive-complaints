@@ -33,12 +33,12 @@ library(emayili)
 # "smart" or "nback"
 # "rai" or "spm" or "self_reports"
 # "questionnaire" for the pre-assessment questionnaire
-training_type <- "self_reports"
+training_type <- "smart"
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
-download_location <- paste0('raw/assessments/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
-save_location <- paste0('raw/assessments/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
+download_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.sqlite')
+save_location <- paste0('raw/training/', training_type, '_data_', format(Sys.Date(), "%d%m%Y"), '.rds')
 
 
 ## Change these to specify which procedure you want to download:
@@ -50,7 +50,7 @@ save_location <- paste0('raw/assessments/', training_type, '_data_', format(Sys.
 #### For SMART: training-1/data/data.sqlite
 #### For NBACK: training-2/data/data.sqlite
 
-url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/b_qol_gds/data/data.sqlite"
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/training-1/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
 
