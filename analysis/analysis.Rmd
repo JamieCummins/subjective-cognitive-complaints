@@ -16,6 +16,98 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 
-group_level_df <- read_csv("../data/processed/processed.csv")
+group_level_df <- read_csv("../data/processed/group_level.csv")
+
+```
+
+```{r}
+
+group_level_df |>
+  distinct(email) |>
+  count()
+
+```
+
+
+```{r}
+
+group_level_df |>
+  filter(!is.na(condition)) |>
+  group_by(timepoint, condition) |>
+  summarise(mean_score = mean(relational_score, na.rm = TRUE),
+            sd_score = sd(relational_score, na.rm = TRUE)) |>
+  mutate(timepoint = as.factor(timepoint)) |>
+  ggplot() +
+  aes(timepoint, mean_score, group = 1) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_score - sd_score,
+                    ymax = mean_score + sd_score)) +
+  facet_wrap(~condition) +
+  theme_classic() +
+  labs(title = "Relational Abilities")
+
+```
+
+
+```{r}
+
+group_level_df |>
+  filter(!is.na(condition)) |>
+  group_by(timepoint, condition) |>
+  summarise(mean_score = mean(fluid_iq, na.rm = TRUE),
+            sd_score = sd(fluid_iq, na.rm = TRUE)) |>
+  mutate(timepoint = as.factor(timepoint)) |>
+  ggplot() +
+  aes(timepoint, mean_score, group = 1) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_score - sd_score,
+                    ymax = mean_score + sd_score)) +
+  facet_wrap(~condition) +
+  theme_classic() +
+  labs(title = "Fluid IQ")
+
+```
+
+
+```{r}
+
+group_level_df |>
+  filter(!is.na(condition)) |>
+  group_by(timepoint, condition) |>
+  summarise(mean_score = mean(brief_global_score, na.rm = TRUE),
+            sd_score = sd(brief_global_score, na.rm = TRUE)) |>
+  mutate(timepoint = as.factor(timepoint)) |>
+  ggplot() +
+  aes(timepoint, mean_score, group = 1) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_score - sd_score,
+                    ymax = mean_score + sd_score)) +
+  facet_wrap(~condition) +
+  theme_classic() +
+  labs(title = "BRIEF total scale scores")
+
+```
+
+
+```{r}
+
+group_level_df |>
+  filter(!is.na(condition)) |>
+  group_by(timepoint, condition) |>
+  summarise(mean_score = mean(rbans_total_scale, na.rm = TRUE),
+            sd_score = sd(rbans_total_scale, na.rm = TRUE)) |>
+  mutate(timepoint = as.factor(timepoint)) |>
+  ggplot() +
+  aes(timepoint, mean_score, group = 1) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_score - sd_score,
+                    ymax = mean_score + sd_score)) +
+  facet_wrap(~condition) +
+  theme_classic() +
+  labs(title = "RBANS total scale scores")
 
 ```
