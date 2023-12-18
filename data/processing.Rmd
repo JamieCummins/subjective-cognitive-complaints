@@ -33,7 +33,7 @@ library(emayili)
 # "smart" or "nback"
 # "rai" or "spm" or "self_reports"
 # "questionnaire" for the pre-assessment questionnaire
-training_type <- "rai"
+training_type <- "self_reports"
 
 ## Change these:
 ### make sure you leave the "data.sqlite" and "data.csv" bits
@@ -50,7 +50,7 @@ save_location <- paste0('raw/assessments/', training_type, '_data_', format(Sys.
 #### For SMART: training-1/data/data.sqlite
 #### For NBACK: training-2/data/data.sqlite
 
-url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/rai-elaborated-nl/data/data.sqlite"
+url <- "ftp://ftp.drjamiecumminscom.webhosting.be/www/md/b_qol_gds/data/data.sqlite"
 credentials <- "mariedelabie@drjamiecumminscom:MarieDelabie1"
 
 
@@ -223,6 +223,7 @@ questionnaire_df <- questionnaire_raw_df %>%
 write_csv(questionnaire_df, paste0("processed/questionnaire_processed_data_", format(Sys.Date(), "%d%m%Y"), ".csv"))
 
 ```
+
 # load the most recent SMART and NBACK data
 
 ```{r}
@@ -323,16 +324,16 @@ weekly_nback_df <- nback_raw_df |>
 
 library(tidyverse)
 
-rai_raw_df <- read_rds("raw/assessments/rai_data_20092023.rds") |>
+rai_raw_df <- read_rds("raw/assessments/rai_data_27112023.rds") |>
   fill(prolificid, .direction = "downup") |>
   rename(email = prolificid) |>
   mutate(timestamp = lubridate::date(timestamp),
          email = tolower(email))
-spm_raw_df <- read_rds("raw/assessments/spm_data_20092023.rds") |>
+spm_raw_df <- read_rds("raw/assessments/spm_data_18122023.rds") |>
   fill(email, .direction = "downup") |>
   mutate(timestamp = lubridate::date(timestamp),
          email = tolower(email))
-self_reports_raw_df <- read_rds("raw/assessments/self_reports_data_20092023.rds") |>
+self_reports_raw_df <- read_rds("raw/assessments/self_reports_data_18122023.rds") |>
   fill(wat_is_uw_email, .direction = "downup") |>
   rename(email = wat_is_uw_email) |>
   mutate(timestamp = lubridate::date(timestamp),
@@ -442,7 +443,8 @@ complete_rai_sessions_and_timestamps <- rai_raw_df |>
   filter(trial_num != "NA") |>
   group_by(unique_id, timestamp) |>
   distinct(trial_num, timestamp, .keep_all = TRUE) |>
-  filter(n() > 126) |>
+  filter(email == "hermansp@telenet.be") |>
+  filter(n() > 109) |>
   ungroup() |>
   distinct(email, timestamp, unique_id)
 
@@ -612,20 +614,22 @@ conditions_df <- read_csv2("conditions_24072023.csv") |>
 
 group_level_df <- self_reports_cleaned_df |>
   full_join(fluid_iq_df) |>
-  full_join(relational_task_overall_scores_df) |>
-  full_join(rbans_cleaned_df) |>
+  # full_join(relational_task_overall_scores_df) |>
+  # full_join(rbans_cleaned_df) |>
   full_join(conditions_df) |>
   mutate(email = case_when(email == "jos.nijst@gmail.com" ~ "jos.nijst@icloud.com",
                    TRUE ~ email)) |>
   group_by(email) |>
   filter(n() == 2) |>
   ungroup() |>
-  select(-ravens_raw_score,
-         -ravens_duration_minutes,
-         -ravens_percentile,
-         -rts_criterion) |>
-  filter(!str_detect(email, "test"))
+  # select(-ravens_raw_score,
+  #        -ravens_duration_minutes,
+  #        -ravens_percentile,
+  #        -rts_criterion) |>
+  filter(!str_detect(email, "test"),
+         !is.na(condition)) |>
+  select(email, timepoint, fluid_iq, brief_global_score, qol_score, gds_score)
 
-write_csv(group_level_df, "processed/group_level.csv")
+write_csv(group_level_df, "processed/selma_group_level.csv")
 
 ```
