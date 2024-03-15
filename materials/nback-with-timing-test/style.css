@@ -1,0 +1,47 @@
+.game-board {
+    display: grid;
+    grid-template-rows: 200px 200px 200px;
+    grid-template-columns: 200px 200px 200px;
+    margin-left: 25%;
+    margin-top: 5%;
+}
+
+
+.box {
+  background: white;
+  border: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.instruction_images {
+    margin-left: 15%;
+    margin-top: 2.5%;
+}
+
+.left-button{
+     float:left;
+}
+.right-button{
+     float:right;
+}
+
+.left-button-correct{
+     float:left;
+     color: green;
+}
+.right-button-correct{
+     float:right;
+     color: green;
+}
+
+.left-button-wrong{
+     float:left;
+     color: red;
+}
+.right-button-wrong{
+     float:right;
+     color: red;
+}
