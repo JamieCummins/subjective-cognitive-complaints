@@ -1,113 +1,959 @@
 ---
-title: "analysis"
-author: "Jamie Cummins"
+title: "Analyses"
+author: "Zita Meijer"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
+This is the analysis script for the project 'Cognitive training and self-reported cognitive complaints.'
+
+## load data & packages
+
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 
-```
-
-
-```{r}
-
+library(dplyr)
 library(tidyverse)
-
-group_level_df <- read_csv("../data/processed/group_level.csv")
-
-```
-
-```{r}
-
-group_level_df |>
-  distinct(email) |>
-  count()
-
-```
-
-
-```{r}
-
-group_level_df |>
-  filter(!is.na(condition)) |>
-  group_by(timepoint, condition) |>
-  summarise(mean_score = mean(relational_score, na.rm = TRUE),
-            sd_score = sd(relational_score, na.rm = TRUE)) |>
-  mutate(timepoint = as.factor(timepoint)) |>
-  ggplot() +
-  aes(timepoint, mean_score, group = 1) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean_score - sd_score,
-                    ymax = mean_score + sd_score)) +
-  facet_wrap(~condition) +
-  theme_classic() +
-  labs(title = "Relational Abilities")
-
-```
+library(yarrr)
+library(flextable)
+library(car)
+library(emmeans)
+library(corrplot)
+library(psych)
+library(reshape2)
+library(tableone)
+library(effsize)
+library(ggpubr)
+library(effectsize)
+library(pwr)
 
 
-```{r}
+#demographics
+demographics_data <- read.csv("data/demographic_data.csv")
+  
+#training data
+smart_trainingdata <- read.csv("data/smart_trainingdata.csv")
+nback_trainingdata <- read.csv("data/nback_trainingdata.csv")
 
-group_level_df |>
-  filter(!is.na(condition)) |>
-  group_by(timepoint, condition) |>
-  summarise(mean_score = mean(fluid_iq, na.rm = TRUE),
-            sd_score = sd(fluid_iq, na.rm = TRUE)) |>
-  mutate(timepoint = as.factor(timepoint)) |>
-  ggplot() +
-  aes(timepoint, mean_score, group = 1) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean_score - sd_score,
-                    ymax = mean_score + sd_score)) +
-  facet_wrap(~condition) +
-  theme_classic() +
-  labs(title = "Fluid IQ")
+#outcomes
+RAI_data <- read.csv("data/RAI_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id") 
+
+RAI_subscale_data <- read.csv("data/RAI_subscales_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+RBANS_index_data <- read.csv("data/RBANS_index_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+SPM_data <- read.csv("data/SPM_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+brief_data <- read.csv("data/brief_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+gds_data <- read.csv("data/GDS_data.csv") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+EUQol_data <- read.csv("data/EUQol_data.csv", sep=";") |>
+  left_join(demographics_data, by= "anonymized_id")
+
+#data for exploratory analyses
+assessmentformat_data <- read.csv("data/assessment_format_data.csv", sep=";")
 
 ```
 
+## Sample Information
 
 ```{r}
-
-group_level_df |>
-  filter(!is.na(condition)) |>
-  group_by(timepoint, condition) |>
-  summarise(mean_score = mean(brief_global_score, na.rm = TRUE),
-            sd_score = sd(brief_global_score, na.rm = TRUE)) |>
-  mutate(timepoint = as.factor(timepoint)) |>
-  ggplot() +
-  aes(timepoint, mean_score, group = 1) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean_score - sd_score,
-                    ymax = mean_score + sd_score)) +
-  facet_wrap(~condition) +
-  theme_classic() +
-  labs(title = "BRIEF total scale scores")
+#table with sample characteristics
+summary_stats <- demographics_data %>%
+  group_by(condition) %>% 
+  summarise(
+    n = n(),  # Number of participants per group
+    Mean_Age = mean(age, na.rm = TRUE),  # Mean age
+    SD_Age = sd(age, na.rm = TRUE),      # Standard deviation of age
+    Min_Age = min(age, na.rm = TRUE),    # Minimum age (Lower)
+    Max_Age = max(age, na.rm = TRUE),    # Maximum age (Higher)
+    Female_Count = sum(corrected_sex == "v", na.rm = TRUE),  # Count of females
+    Male_Count = sum(corrected_sex == "m", na.rm = TRUE)       # Count of males
+  )
 
 ```
 
+## Training Data
+
+```{r echo=TRUE}
+#SMART
+
+##table with number of sessions and highest reached stage
+smart_table <- CreateTableOne(vars = c("n_sessions", "highest_stage"), 
+                                data = smart_trainingdata)
+
+print(smart_table, showAllLevels = TRUE)
+
+##plot number of sessions
+smart_dist <- ggplot(smart_trainingdata, aes(x = n_sessions)) +
+  geom_histogram(binwidth = 1, fill = "#0072B2", color = "black", boundary = 0.5) +
+  labs(title = "SMART",
+       x = "Number of Sessions",
+       y = "Number of Participants") +
+  theme_minimal()
+ggsave("visuals/distribution_SMART.png", plot= smart_dist, width = 4, height = 3, dpi = 600)
+
+
+#N-Back
+
+##table with number of sessions and highest reached stage
+nback_table <- CreateTableOne(vars = c("n_sessions", "highest_stage"), 
+                                data = nback_trainingdata)
+
+print(nback_table, showAllLevels = TRUE)
+
+##plot number of sessions
+nback_dist <- ggplot(nback_trainingdata, aes(x = n_sessions)) +
+  geom_histogram(binwidth = 1, fill = "#E69F00", color = "black", boundary = 0.5) +
+  labs(title = "Dual N-Back",
+       x = "Number of Sessions",
+       y = "Number of Participants") +
+  theme_minimal()
+ggsave("visuals/distribution_nback.png", plot= nback_dist, width = 4, height = 3, dpi = 600)
+```
+
+## Sensitivity Analysis
 
 ```{r}
+#retest power
+# Define parameters
+u <- 1              # 1 predictor of interest (condition)
+k <- 2              # total number of predictors (score_t1 and condition)
+N <- 105            # total sample size
+v <- N - k - 1      # degrees of freedom for error
 
-group_level_df |>
-  filter(!is.na(condition)) |>
-  group_by(timepoint, condition) |>
-  summarise(mean_score = mean(rbans_total_scale, na.rm = TRUE),
-            sd_score = sd(rbans_total_scale, na.rm = TRUE)) |>
-  mutate(timepoint = as.factor(timepoint)) |>
-  ggplot() +
-  aes(timepoint, mean_score, group = 1) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean_score - sd_score,
-                    ymax = mean_score + sd_score)) +
-  facet_wrap(~condition) +
-  theme_classic() +
-  labs(title = "RBANS total scale scores")
+# Run power analysis
+pwr.f2.test(u = u, v = v, sig.level = 0.05, power = 0.80)
+```
+
+# Confirmatory Analyses
+
+## Primary Analyses
+
+### RAI DATA
+
+#### Summary statistics and visualization
+
+```{r echo=TRUE, results="markup"}
+
+#summary table
+RAI_stats <- RAI_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(total_correct, na.rm = TRUE),
+    sd = sd(total_correct, na.rm = TRUE)) |>
+  ungroup()|>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(RAI_stats)
+  
+#n per group
+RAI_sample <- RAI_data |>
+  count(condition) |>
+  mutate(n = n/2)
+
+flextable(RAI_sample)
+
+#violin plot with lines
+RAI_data$timepoint <- as.factor(RAI_data$timepoint)
+RAI_stats$timepoint <- as.factor(RAI_stats$timepoint)
+
+RAI_plot <- ggplot(RAI_data, aes(x = timepoint, y = total_correct, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = RAI_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = RAI_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "RAI",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RAI.png", plot= RAI_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+#### Hypothesis testing
+
+```{r echo=TRUE, results="markup"}
+RAI_wide_data <- RAI_data |> #change dataframe to wide format with column per timepoint
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = total_correct,     
+    names_prefix = "score_t"  # Add a prefix to the new column names 
+  )
+
+#test ANCOVA
+RAI_model <- lm(score_t2 ~ score_t1 + condition, data= RAI_wide_data)
+summary(RAI_model)
+anova(RAI_model)
+
+#Partial eta squared
+eta <- eta_squared(RAI_model, partial = TRUE, ci = 0.95, alternative = "two.sided")
+print(eta)
+
+#Post hoc t-tests
+SMART_RAI <- RAI_wide_data |>
+  filter(condition == "SMART")
+
+t.test(SMART_RAI$score_t2, SMART_RAI$score_t1, paired = TRUE, alternative = "greater")
+
+NBACK_RAI <- RAI_wide_data |>
+  filter(condition == "N-BACK")
+
+t.test(NBACK_RAI$score_t2, NBACK_RAI$score_t1, paired = TRUE, alternative = "greater")
+
+##cohen's d
+cohen.d(SMART_RAI$score_t2, SMART_RAI$score_t1, paired = TRUE)
+cohen.d(NBACK_RAI$score_t2, NBACK_RAI$score_t1, paired = TRUE)
+
+```
+
+### RBANS DATA
+
+#### Summary statistics and visualization
+
+```{r echo=TRUE}
+#summary table
+RBANS_stats <- RBANS_index_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(total_scale, na.rm = TRUE),
+    sd = sd(total_scale, na.rm = TRUE)) |>
+  ungroup()|>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(RBANS_stats)
+  
+#n per condition
+RBANS_sample <- RBANS_index_data |>
+  count(condition)
+
+flextable(RBANS_sample)
+
+#violin plot with lines
+RBANS_index_data$timepoint <- as.factor(RBANS_index_data$timepoint)
+RBANS_stats$timepoint <- as.factor(RBANS_stats$timepoint)
+
+RBANS_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = total_scale, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = RBANS_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = RBANS_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "RBANS",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS.png", plot= RBANS_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+#### #hypothesis testing
+
+```{r echo=TRUE}
+RBANS_wide_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, total_scale, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = total_scale,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+#test ANCOVA
+RBANS_model <- lm(score_t2 ~ score_t1 + condition, data= RBANS_wide_data)
+summary(RBANS_model)
+anova(RBANS_model)
+
+#partial eta squared
+eta <- eta_squared(RBANS_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#post-hoc t-test
+t.test(RBANS_wide_data$score_t2, RBANS_wide_data$score_t1, paired = TRUE,  alternative = "less")
+cohen.d(RBANS_wide_data$score_t2, RBANS_wide_data$score_t1, paired = TRUE)
+```
+
+### SPM DATA
+
+#### Summary statistics and visualization
+
+```{r echo=TRUE}
+#Summary table
+SPM_stats <- SPM_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(score, na.rm = TRUE),
+    sd = sd(score, na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(SPM_stats)
+
+#n per condition
+SPM_sample <- SPM_data |>
+  count(condition)
+
+flextable(SPM_sample)
+
+
+#violin plot with lines
+SPM_data$timepoint <- as.factor(SPM_data$timepoint)
+SPM_stats$timepoint <- as.factor(SPM_stats$timepoint)
+
+SPM_plot <- ggplot(SPM_data, aes(x = timepoint, y = score, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = SPM_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = SPM_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "SPM",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/SPM.png", plot= SPM_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+#### hypothesis testing
+
+```{r echo=TRUE}
+SPM_wide_data <- SPM_data |> #change dataframe to wide format with column per timepoint
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = score,     
+    names_prefix = "score_t"  # Add a prefix to the new column names 
+  )
+
+#test ANCOVA
+SPM_model <- lm(score_t2 ~ score_t1 + condition, data= SPM_wide_data)
+summary(SPM_model)
+anova(SPM_model)
+
+#partial eta squared
+eta <- eta_squared(SPM_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#Post hoc t-test
+t.test(SPM_wide_data$score_t2, SPM_wide_data$score_t1, paired = TRUE,  alternative = "greater")
+cohen.d(SPM_wide_data$score_t2, SPM_wide_data$score_t1, paired = TRUE)
+```
+
+## Secondary Analyses
+
+### BRIEF DATA
+
+#### Summary statistics and visualization
+
+```{r echo=TRUE}
+#summary table
+brief_stats <- brief_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(T_score_total, na.rm = TRUE),
+    sd = sd(T_score_total, na.rm = TRUE)) |>
+  ungroup()|>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(brief_stats)
+
+#n per condition
+brief_sample <- brief_data |>
+  count(condition)
+
+flextable(brief_sample)
+
+#violin plot with lines
+brief_data$timepoint <- as.factor(brief_data$timepoint)
+brief_stats$timepoint <- as.factor(brief_stats$timepoint)
+
+brief_plot <- ggplot(brief_data, aes(x = timepoint, y = T_score_total, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = brief_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = brief_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "BRIEF - A",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/brief.png", plot= brief_plot, width = 8, height = 6, dpi = 300)
+  
+```
+
+#### hypothesis testing
+
+```{r echo=TRUE}
+brief_wide_data <- brief_data |> #change dataframe to wide format with column per timepoint
+  pivot_wider(
+    id_cols = c(anonymized_id, condition),
+    names_from = timepoint, 
+    values_from = T_score_total,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+#test ANCOVA
+brief_model <- lm(score_t2 ~ score_t1 + condition, data= brief_wide_data)
+summary(brief_model)
+anova(brief_model)
+
+#partial eta squared
+eta <- eta_squared(brief_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#Post hoc t-test
+t.test(brief_wide_data$score_t2, brief_wide_data$score_t1, paired = TRUE,  alternative = "less")
+cohen.d(brief_wide_data$score_t2, brief_wide_data$score_t1, paired = TRUE)
+
+```
+
+### GDS DATA
+
+#### Summary statistics and visualization
+
+```{r}
+#summary table
+gds_stats <- gds_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(gds_score, na.rm = TRUE),
+    sd = sd(gds_score, na.rm = TRUE)) |>
+  ungroup()|>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(gds_stats)
+
+#n per condition
+gds_sample <- gds_data |>
+  count(condition)
+
+flextable(gds_sample)
+
+#violin plot with lines
+gds_data$timepoint <- as.factor(gds_data$timepoint)
+gds_stats$timepoint <- as.factor(gds_stats$timepoint)
+
+gds_plot <- ggplot(gds_data, aes(x = timepoint, y = gds_score, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = gds_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = gds_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "GDS - 15",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/gds.png", plot= gds_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+#### hypothesis testing
+
+```{r echo=TRUE}
+gds_wide_data <- gds_data |> #change dataframe to wide format with column per timepoint
+  pivot_wider(
+    id_cols = c(anonymized_id, condition),
+    names_from = timepoint, 
+    values_from = gds_score,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+#test ANCOVA
+gds_model <- lm(score_t2 ~ score_t1 + condition, data= gds_wide_data)
+summary(gds_model)
+anova(gds_model)
+
+#partial eta squared
+eta <- eta_squared(gds_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#Post hoc t-tests
+t.test(gds_wide_data$score_t2, gds_wide_data$score_t1, paired = TRUE,  alternative = "less")
+cohen.d(gds_wide_data$score_t2, gds_wide_data$score_t1, paired = TRUE)
+
+```
+
+### EuroQol DATA
+
+#### Summary statistics and visualization
+
+```{r}
+#summary table
+EUQol_stats <- EUQol_data |>
+  group_by(condition, timepoint) |>
+  summarize(
+    mean_score = mean(EUQol_score, na.rm = TRUE),
+    sd = sd(EUQol_score, na.rm = TRUE)) |>
+  ungroup()|>
+  mutate(timepoint = as.factor(timepoint))
+
+flextable(EUQol_stats)
+
+#n per condition
+EUQol_sample <- EUQol_data |>
+  count(condition)
+
+flextable(EUQol_sample)
+
+#violin plot with lines
+EUQol_data$timepoint <- as.factor(EUQol_data$timepoint)
+EUQol_stats$timepoint <- as.factor(EUQol_stats$timepoint)
+
+EUQol_plot <- ggplot(EUQol_data, aes(x = timepoint, y = EUQol_score, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = EUQol_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = EUQol_stats, aes(y = mean_score, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "EuroQol - 5D",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/EUQol.png", plot= EUQol_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+#### hypothesis testing
+
+```{r echo=TRUE}
+EUQol_wide_data <- EUQol_data |> #change dataframe to wide format with column per timepoint
+  pivot_wider(
+    id_cols = c(anonymized_id, condition),
+    names_from = timepoint, 
+    values_from = EUQol_score,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+#test ANCOVA
+EUQol_model <- lm(score_t2 ~ score_t1 + condition, data= EUQol_wide_data)
+summary(EUQol_model)
+anova(EUQol_model)
+
+#partial eta squared
+eta <- eta_squared(EUQol_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#Post hoc t-tests
+t.test(EUQol_wide_data$score_t2, EUQol_wide_data$score_t1, paired = TRUE,  alternative = "greater")
+cohen.d(EUQol_wide_data$score_t2, EUQol_wide_data$score_t1, paired = TRUE)
+
+```
+
+### Subscales RBANS
+
+```{r echo=TRUE}
+
+#IMMEDIATE MEMORY
+##summary and plot
+means <- RBANS_index_data %>%
+  group_by(timepoint, condition) %>%
+  summarise(Mean = mean(immediate_memory), .groups = "drop") %>%
+  mutate(timepoint = as.factor(timepoint))
+
+RBANS_index_data$timepoint <- as.factor(RBANS_index_data$timepoint)
+
+immem_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = immediate_memory, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "Immediate Memory",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS/immem.png", plot= immem_plot, width = 8, height = 6, dpi = 300)
+
+##model testing
+immem_wide_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, immediate_memory, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = immediate_memory,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+immem_model <- lm(score_t2 ~ score_t1 + condition, data= immem_wide_data)
+anova(immem_model)
+
+#Partial eta squared
+eta <- eta_squared(immem_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+
+#VISUOSPATIAL-CONSTRUCTUAL
+##summary and plot
+means <- RBANS_index_data %>%
+  group_by(timepoint, condition) %>%
+  summarise(Mean = mean(visuospatial.constructional), .groups = "drop") %>%
+  mutate(timepoint = as.factor(timepoint))
+
+
+vs_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = visuospatial.constructional, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "Visuospatial-Constructional",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS/vs.png", plot= vs_plot, width = 8, height = 6, dpi = 300)
+
+##test model
+vs_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, visuospatial.constructional, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = visuospatial.constructional,     
+    names_prefix = "score_t"  # Add a prefix to the new column names 
+  )
+
+vs_model <- lm(score_t2 ~ score_t1 + condition, data= vs_data)
+anova(vs_model)
+
+#Partial eta squared
+eta <- eta_squared(vs_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+
+#LANGUAGE
+##summary and plot
+means <- RBANS_index_data %>%
+  group_by(timepoint, condition) %>%
+  summarise(Mean = mean(language), .groups = "drop") %>%
+  mutate(timepoint = as.factor(timepoint))
+
+lang_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = language, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "Language",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS/lang.png", plot= lang_plot, width = 8, height = 6, dpi = 300)
+
+##test model
+lang_wide_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, language, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = language,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+lang_model <- lm(score_t2 ~ score_t1 + condition, data= lang_wide_data)
+anova(lang_model)
+
+#Partial eta squared
+eta <- eta_squared(lang_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+
+#ATTENTION
+##summary and plot
+means <- RBANS_index_data %>%
+  group_by(timepoint, condition) %>%
+  summarise(Mean = mean(attention), .groups = "drop") %>%
+  mutate(timepoint = as.factor(timepoint))
+
+att_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = attention, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "Attention",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS/att.png", plot= att_plot, width = 8, height = 6, dpi = 300)
+
+
+#test model
+att_wide_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, attention, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = attention,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+att_model <- lm(score_t2 ~ score_t1 + condition, data= att_wide_data)
+anova(att_model)
+
+#Partial eta squared
+eta <- eta_squared(att_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+#DELAYED MEMORY
+##summary and plot
+means <- RBANS_index_data %>%
+  group_by(timepoint, condition) %>%
+  summarise(Mean = mean(delayed_memory), .groups = "drop") %>%
+  mutate(timepoint = as.factor(timepoint))
+
+delmem_plot <- ggplot(RBANS_index_data, aes(x = timepoint, y = delayed_memory, fill = factor(condition, levels = c("SMART", "N-BACK")))) +
+  gghalves::geom_half_violin(position = position_dodge(0.8), 
+                             alpha = 0.4, 
+                             side = "l") +
+  geom_point(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+             position = position_dodge(0.8), size = 2) +
+  geom_line(data = means, aes(y = Mean, group = factor(condition, levels = c("SMART", "N-BACK")), color = factor(condition, levels = c("SMART", "N-BACK"))),
+            position = position_dodge(0.8), size = 1.2) +
+  scale_color_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  scale_fill_manual(name = 'Condition', values = c("SMART" = "#0072B2", "N-BACK" = "#E69F00")) +
+  labs(title = "Delayed Memory",
+       x = "Timepoint",
+       y = "Score") +
+  theme_minimal(base_size = 14)
+
+ggsave("visuals/RBANS/delmem.png", plot= delmem_plot, width = 8, height = 6, dpi = 300)
+
+#test model
+delmem_wide_data <- RBANS_index_data |> #change dataframe to wide format with column per timepoint
+  select(anonymized_id, timepoint, delayed_memory, condition) |>
+  pivot_wider(
+    names_from = timepoint, 
+    values_from = delayed_memory,     
+    names_prefix = "score_t"  # Add a prefix to the new column names
+  )
+
+delmem_model <- lm(score_t2 ~ score_t1 + condition, data= delmem_wide_data)
+anova(delmem_model)
+
+#Partial eta squared
+eta <- eta_squared(delmem_model, partial = TRUE, ci = 0.95, , alternative = "two.sided")
+print(eta)
+
+```
+
+### Correlations Full Scales at Baseline
+
+```{r echo=TRUE}
+corr_data <- RAI_data |>
+  left_join(RBANS_index_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(SPM_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(brief_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(gds_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(EUQol_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  filter(timepoint == 1) |>
+  rename(RAI = total_correct) |>
+  rename(SPM = score) |>
+  rename(RBANS = total_scale) |>
+  rename(BRIEF = T_score_total) |>
+  select(-c(anonymized_id, timepoint, age, corrected_sex, condition, brief_total_score, mobility, self_care, daily_activities, pain, depression, immediate_memory, visuospatial.constructional, language, attention, delayed_memory))
+  
+
+# Calculate Pearson's correlations with p-values and confidence intervals
+cor_results <- corr.test(corr_data) 
+
+cor_long <- as.data.frame(as.table(cor_results$r)) |>
+  rename(r = Freq)
+
+combined_results <- cor_long |>
+  left_join(as.data.frame(cor_results$ci), by = "r") |>
+  mutate(
+    p_corrected = p.adjust(p, method = "holm"),  
+    significance = case_when(
+      p_corrected < 0.001 ~ "***",
+      p_corrected < 0.01  ~ "**",
+      p_corrected < 0.05  ~ "*",
+      TRUE ~ ""
+    ),
+    r = round(r, 2),
+    lower = round(lower, 2),
+    upper = round(upper, 2),
+    cell_content = paste0(r, " [", lower, ", ", upper, "] ", significance)
+  ) |>
+  ungroup()
+
+matrix_results <- combined_results %>%
+  select(Var1, Var2, cell_content) %>%
+  pivot_wider(names_from = Var1, values_from = cell_content)
+
+flextable(matrix_results)
+```
+
+### Correlation RAI Subscales at Baseline
+
+```{r echo=TRUE}
+RAI_subscale_data$timepoint <- as.factor(RAI_subscale_data$timepoint)
+RBANS_index_data$timepoint <- as.factor(RBANS_index_data$timepoint)
+SPM_data$timepoint <- as.factor(SPM_data$timepoint)
+brief_data$timepoint <- as.factor(brief_data$timepoint)
+gds_data$timepoint <- as.factor(gds_data$timepoint)
+EUQol_data$timepoint <- as.factor(EUQol_data$timepoint)
+
+corr_data <- RAI_subscale_data |>
+  left_join(RBANS_index_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(SPM_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(brief_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(gds_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  left_join(EUQol_data, by= c("anonymized_id", "age", "corrected_sex", "condition", "timepoint")) |>
+  filter(timepoint == 1) |>
+  pivot_wider(names_from = subscale, values_from = total_correct)|>
+  rename(SPM = score) |>
+  rename(RBANS_total = total_scale) |>
+  rename(BRIEF = T_score_total) |>
+  select(-c(anonymized_id, timepoint, age, corrected_sex, condition, brief_total_score, mobility, self_care, daily_activities, pain, depression))
+
+# Calculate correlations with p-values and confidence intervals
+cor_results <- corr.test(corr_data) 
+
+cor_long <- as.data.frame(as.table(cor_results$r)) |>
+  rename(r = Freq)
+
+combined_results <- cor_long |>
+  left_join(as.data.frame(cor_results$ci), by = "r") |>
+  filter(Var1 %in% c("opposition", "difference", "quantity", "temporal", "containment", "analogy", "deictic", "mathematical")) |>
+  filter(!Var2 %in% c("opposition", "difference", "quantity", "temporal", "containment", "analogy", "deictic", "mathematical")) |>
+  mutate(Var1 = factor(Var1, levels = c("opposition", "difference", "quantity", "temporal", "containment", "analogy", "deictic", "mathematical"))) |>
+  arrange(Var1) |>
+  group_by(Var1) |>
+  mutate(
+    p_corrected = p.adjust(p, method = "holm"),  
+    significance = case_when(
+      p_corrected < 0.001 ~ "***",
+      p_corrected < 0.01  ~ "**",
+      p_corrected < 0.05  ~ "*",
+      TRUE ~ ""
+    ),
+    r = round(r, 2),
+    lower = round(lower, 2),
+    upper = round(upper, 2),
+    cell_content = paste0(r, " [", lower, ", ", upper, "] ", significance)
+  ) |>
+  ungroup()
+
+matrix_results <- combined_results %>%
+  select(Var1, Var2, cell_content) %>%
+  pivot_wider(names_from = Var1, values_from = cell_content)
+
+flextable(matrix_results)
+```
+
+## Exploratory Analyses
+
+### Drop out
+
+```{r}
+#drop out data
+dropout_table <- matrix(c(46, 53, 58, 52), nrow = 2, byrow = TRUE)
+rownames(dropout_table) <- c("SMART", "N-Back")
+colnames(dropout_table) <- c("Dropped Out", "Completed")
+
+#chi-sqrd test
+chisq_result <- chisq.test(dropout_table)
+print(chisq_result)
+
+#Cramer's V
+chi2 <- chisq_result$statistic
+n <- sum(dropout_table)
+k <- min(dim(dropout_table))
+cramers_v <- sqrt(chi2 / (n * (k - 1)))
+print(cramers_v)
+
+cramers_v(chisq_result, alternative = "two.sided")
+
+```
+
+### Dosage effect
+
+```{r}
+#group training data in one dataframe
+trainingdata <- smart_trainingdata |>
+  rbind(nback_trainingdata)
+
+#RAI
+RAI_dosage <- RAI_wide_data |>
+  left_join(trainingdata, by = 'anonymized_id')
+
+RAI_dosage_model <- lm(score_t2 ~ score_t1 + condition + n_sessions, data= RAI_dosage)
+summary(RAI_dosage_model)
+anova(RAI_dosage_model)
+
+eta_squared(RAI_dosage_model, partial = TRUE, ci = 0.95, alternative = "two.sided")
+
+#RBANS
+RBANS_dosage <- RBANS_wide_data |>
+  left_join(trainingdata, by = 'anonymized_id')
+
+RBANS_dosage_model <- lm(score_t2 ~ score_t1 + condition + n_sessions, data= RBANS_dosage)
+summary(RBANS_dosage_model)
+anova(RBANS_dosage_model)
+
+eta_squared(RBANS_dosage_model, partial = TRUE, ci = 0.95, alternative = "two.sided")
+
+#SPM
+SPM_dosage <- SPM_wide_data |>
+  left_join(trainingdata, by = 'anonymized_id')
+
+SPM_dosage_model <- lm(score_t2 ~ score_t1 + condition + n_sessions, data= SPM_dosage)
+summary(SPM_dosage_model)
+anova(SPM_dosage_model)
+
+eta_squared(SPM_dosage_model, partial = TRUE, ci = 0.95, alternative = "two.sided")
 
 ```
