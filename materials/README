@@ -1,2 +1,2 @@
-smart-js-nl.json contains the Lab.js script for SMART (Dutch, adult version)
+smart-js-nl.json contains the Lab.js script for SMART (Dutch, adult version), later extended with extra difference subscale (smart-adult-nl-with-difference.json) 
 dual-nback-with-timing.json contains the Lab.js script for the Dual N-back training used in the control condition
